@@ -6,6 +6,7 @@
 package at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.api;
 
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
+import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control.RequirementsManagementController;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control.SESConstructionController;
 import com.wordnik.swagger.annotations.Api;
 import javax.ws.rs.DELETE;
@@ -21,66 +22,69 @@ import org.springframework.stereotype.Service;
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-@Service("sesConstructionService")
+@Service("requirementsManagementService")
 @Provider
-@Path("/")
-@Api(value = "/", description = "The SESConstructionService is the entry point for all SES construction")
-public class SESConstructionService {
+@Path("/requirementsManagement")
+@Api(value = "/", description = "The RequirementsManagementService is the entry point for all methods for managing multi-level requirements")
+public class RequirementsManagementService {
 
     @Autowired
-    private SESConstructionController controller;
+    private SESConstructionController sesConstructionController;
+
+    @Autowired
+    private RequirementsManagementController requirementsManagementController;
 
     @GET
     @Path("/xml/requirements")
     @Produces("application/xml")
     public MultiLevelRequirements getLatestRequirements() {
-        return controller.getRequirements();
+        return requirementsManagementController.getRequirements();
     }
 
     @GET
     @Path("/json/requirements")
     @Produces("application/json")
     public String getLatestRequirementsInJSON() {
-        return controller.getRequirementsJSON();
+        return requirementsManagementController.getRequirementsJSON();
     }
 
     @PUT
     @Path("/xml/requirements")
     public void setRequirements(MultiLevelRequirements levelRequirements) {
-        controller.setRequirements(levelRequirements);
+        requirementsManagementController.setRequirements(levelRequirements);
     }
 
     @GET
     @Path("/json/costmetrics")
     @Produces("application/json")
     public String getCostMetricsAsJSON() {
-        return controller.getCostMetricsAsJSON();
+        return requirementsManagementController.getCostMetricsAsJSON();
     }
 
     @GET
     @Path("/json/qualitymetrics")
     @Produces("application/json")
     public String getQualityMetricsAsJSON() {
-        return controller.getQualityMetricsAsJSON();
+        return requirementsManagementController.getQualityMetricsAsJSON();
     }
 
     @GET
     @Path("/json/resourcemetrics")
     @Produces("application/json")
     public String getResourceMetricsAsJSON() {
-        return controller.getResourceMetricsAsJSON();
+        return requirementsManagementController.getResourceMetricsAsJSON();
     }
 
     @PUT
     @Path("/management/json/requirements")
     public void addToStructureRequirements(String jsonRepr) {
-        controller.addToRequirements(jsonRepr);
+        requirementsManagementController.addToRequirements(jsonRepr);
     }
 
     @DELETE
     @Path("/management/json/requirements")
     public void removeFromStructureRequirements(String jsonRepr) {
-        controller.removeFromRequirements(jsonRepr);
+        requirementsManagementController.removeFromRequirements(jsonRepr);
     }
 
 }

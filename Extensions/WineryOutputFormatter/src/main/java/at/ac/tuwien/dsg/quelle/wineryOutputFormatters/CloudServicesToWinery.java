@@ -49,7 +49,7 @@ public class CloudServicesToWinery {
 
     private List<String> createdSoFar = new ArrayList<>();
 
-    public void createServiceTypes(CloudProvider provider, String outputPath) {
+    public void createWineryNodesFromCloudServices(CloudProvider provider, String outputPath) {
 
         //create path just in case
         File file = new File(outputPath);
@@ -403,6 +403,12 @@ public class CloudServicesToWinery {
         }
     }
 
+    /**
+     * Creates Winery service template from SES Configuration Recommendation
+     * @param configurationsList
+     * @param serviceTemplateName
+     * @param outputPath 
+     */
     public void createToscaServiceTemplate(List<List<ServiceUnitConfigurationSolution>> configurationsList, String serviceTemplateName, String outputPath) {
         //create path just in case
         File file = new File(outputPath);

@@ -6,6 +6,7 @@
 package at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos;
 
 import at.ac.tuwien.dsg.mela.common.requirements.Requirements;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -24,9 +25,11 @@ public class ServiceUnitServicesRecommendation {
 //    @Autowired
 //    @XmlTransient
 //    private CloudServiceElasticityAnalysisEngine cloudServiceElasticityAnalysisEngine;
-
     @XmlElement(name = "ServiceUnitRequirements", required = false)
     private Requirements unitReqs;
+
+    @XmlElement(name = "MultiLevelRequirements", required = false)
+    private MultiLevelRequirements multiLevelRequirements;
 
     @XmlElement(name = "CloudServiceConfigurationRecommendation", required = false)
     private List<CloudServiceConfigurationRecommendation> servicesRecommendations;
@@ -37,7 +40,7 @@ public class ServiceUnitServicesRecommendation {
 
     @XmlElement(name = "Description", required = false)
     private String description;
-    
+
 //    @XmlElement(name = "AverageCostElasticity", required = false)
 //    private double averageCostElasticity = 0d;
 //    
@@ -73,11 +76,10 @@ public class ServiceUnitServicesRecommendation {
 //    
 //    @XmlElement(name = "MaxQualityElasticity", required = false)
 //    private double maxQualityElasticity = Double.NEGATIVE_INFINITY;
-
-    public ServiceUnitServicesRecommendation withSolutionRecommendation(Requirements unitReqs, List<CloudServiceConfigurationRecommendation> servicesRecommendations) {
+    public ServiceUnitServicesRecommendation withSolutionRecommendation(MultiLevelRequirements multiLevelRequirements, Requirements unitReqs, List<CloudServiceConfigurationRecommendation> servicesRecommendations) {
         this.unitReqs = unitReqs;
         this.servicesRecommendations = servicesRecommendations;
-
+        this.multiLevelRequirements = multiLevelRequirements;
         //compute description and elasticity
         updateDescription();
         return this;
@@ -105,6 +107,14 @@ public class ServiceUnitServicesRecommendation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public MultiLevelRequirements getMultiLevelRequirements() {
+        return multiLevelRequirements;
+    }
+
+    public void setMultiLevelRequirements(MultiLevelRequirements multiLevelRequirements) {
+        this.multiLevelRequirements = multiLevelRequirements;
     }
 
 //    public double getAverageCostElasticity() {
@@ -203,8 +213,6 @@ public class ServiceUnitServicesRecommendation {
 //        this.maxQualityElasticity = maxQualityElasticity;
 //    }
 //    
-    
-
     private void updateDescription() {
         description = "";
         int solutionsCount = servicesRecommendations.size();
@@ -264,14 +272,12 @@ public class ServiceUnitServicesRecommendation {
 //            if (maxQualityElasticity < qualityElasticity) {
 //                maxQualityElasticity = qualityElasticity;
 //            }
-
         }
 
 //        averageCostElasticity /= solutionsCount;
 //        averageSUElasticity /= solutionsCount;
 //        averageResourceElasticity /= solutionsCount;
 //        averageQualityElasticity /= solutionsCount;
-
     }
 
 }

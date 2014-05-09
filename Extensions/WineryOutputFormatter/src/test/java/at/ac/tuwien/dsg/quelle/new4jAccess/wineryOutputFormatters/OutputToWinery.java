@@ -58,7 +58,7 @@ public class OutputToWinery extends TestCase {
         CloudServicesToWinery cloudServicesToOpenTosca = new CloudServicesToWinery();
 
         //I need to write for all services new types (except VM) , for which I can just instantiate the existing type
-        cloudServicesToOpenTosca.createServiceTypes(cloudProviders.get(0), "./OpenToscaOutput/nodeTypes");
+        cloudServicesToOpenTosca.createWineryNodesFromCloudServices(cloudProviders.get(0), "./OpenToscaOutput/nodeTypes");
 
     }
 

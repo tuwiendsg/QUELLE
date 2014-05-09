@@ -9,6 +9,7 @@ import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.DataAccess;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control.SESConstructionController;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
+import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control.RequirementsManagementController;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- *
+ * Class currently not in use. Kept in case of future use needed
+ * 
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
 @Component("uiController")
@@ -30,6 +32,9 @@ public class UIController implements Serializable {
 
     @Value(value = "#{sesConstructionController}")
     private SESConstructionController controller;
+    
+    @Value(value = "#{requirementsManagementController}")
+    private RequirementsManagementController requirementsManagementController;
 
     static final Logger log = LoggerFactory.getLogger(UIController.class);
 
@@ -48,7 +53,7 @@ public class UIController implements Serializable {
 
     public void setController(SESConstructionController controller) {
         this.controller = controller;
-        cloudServicesMetrics = controller.updateCloudProvidersDescription();
+        cloudServicesMetrics = requirementsManagementController.getCloudServicesMetrics();
     }
 
     public DataAccess getDataAccess() {
@@ -60,11 +65,11 @@ public class UIController implements Serializable {
     }
 
     public MultiLevelRequirements getRequirements() {
-        return controller.getRequirements();
+        return requirementsManagementController.getRequirements();
     }
 
     public void setRequirements(MultiLevelRequirements requirements) {
-        this.controller.setRequirements(requirements);
+        this.requirementsManagementController.setRequirements(requirements);
     }
 
     public Metric getSelectedMetric() {
