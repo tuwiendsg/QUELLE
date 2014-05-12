@@ -5,8 +5,8 @@
  */
 package at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control;
 
-import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.DataAccess;
-import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.CloudServiceConfigurationRecommendation;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.ServiceUnitServicesRecommendation;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.util.ConfigurationUtil;

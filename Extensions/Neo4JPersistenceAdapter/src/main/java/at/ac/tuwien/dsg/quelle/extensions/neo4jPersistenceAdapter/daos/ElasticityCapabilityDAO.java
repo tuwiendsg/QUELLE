@@ -14,9 +14,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.daos;
+package at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos;
 
-import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.daos.helper.ServiceUnitRelationship;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.helper.ServiceUnitRelationship;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;

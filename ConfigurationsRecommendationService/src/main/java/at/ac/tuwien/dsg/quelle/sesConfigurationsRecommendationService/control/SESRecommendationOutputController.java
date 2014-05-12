@@ -5,8 +5,8 @@
  */
 package at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control;
 
-import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.DataAccess;
-import at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.ServiceUnitConfigurationSolution;
 import at.ac.tuwien.dsg.quelle.wineryOutputFormatters.CloudServicesToWinery;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-@Service("sesConstructionController")
+@Service("sesRecommendationOutputController")
 public class SESRecommendationOutputController implements InitializingBean {
 
     static final Logger log = LoggerFactory.getLogger(SESRecommendationOutputController.class);

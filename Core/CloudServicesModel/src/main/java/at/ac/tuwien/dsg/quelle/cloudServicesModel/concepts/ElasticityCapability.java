@@ -25,7 +25,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- *
+ * One elasticity capability has more dependencies, between which we need to choose 1
+ * 
  * @Author Daniel Moldovan
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *

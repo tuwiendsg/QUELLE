@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package at.ac.tuwien.dsg.extensions.neo4jPersistenceAdapter;
+package at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

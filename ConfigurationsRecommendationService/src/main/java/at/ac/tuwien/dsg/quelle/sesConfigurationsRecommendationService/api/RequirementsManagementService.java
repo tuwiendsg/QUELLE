@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 @Service("requirementsManagementService")
 @Provider
 @Path("/requirementsManagement")
-@Api(value = "/", description = "The RequirementsManagementService is the entry point for all methods for managing multi-level requirements")
+@Api(value = "/requirementsManagement", description = "The RequirementsManagementService is the entry point for all methods for managing multi-level requirements")
 public class RequirementsManagementService {
 
     @Autowired

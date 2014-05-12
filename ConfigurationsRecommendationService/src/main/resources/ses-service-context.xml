@@ -13,7 +13,7 @@
 
     <context:property-placeholder location="file:./config/services-selection.properties"/>
     
-    <bean id="dataAccess" class="at.ac.tuwien.dsg.cloudofferedservices.new4jAccess.DataAccess">
+    <bean id="dataAccess" class="at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess">
         <constructor-arg name="databaseLocation" value="/tmp/quelle-cloudproviders"/>
     </bean>
 
@@ -23,21 +23,25 @@
 
     <jaxrs:server id="sesService" address="/">
         <jaxrs:serviceBeans>
-            <ref bean="sesConstructionService"/>
+            <ref bean="solutionExportService"/>
+            <ref bean="requirementsManagementService"/>
+            <ref bean="configurationsRecommendationService"/>
             <bean id="swaggerResourceJSON" class="com.wordnik.swagger.jaxrs.listing.ApiListingResourceJSON"/>
         </jaxrs:serviceBeans>
+        
         <jaxrs:features>
             <cxf:logging/>
         </jaxrs:features>
+        
         <jaxrs:providers>
-            <bean class="at.ac.tuwien.dsg.cloudserviceselection.cxf.MelaSESConstructionServiceExceptionMapper"/>
+            <bean class="at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.cxf.MelaSESConstructionServiceExceptionMapper"/>
             <bean class="com.wordnik.swagger.jaxrs.listing.ResourceListingProvider"/>
             <bean class="com.wordnik.swagger.jaxrs.listing.ApiDeclarationProvider"/>
         </jaxrs:providers>
     </jaxrs:server> 
  
     <bean id="swaggerConfig" class="com.wordnik.swagger.jaxrs.config.BeanConfig">
-        <property name="resourcePackage" value="at.ac.tuwien.dsg.cloudserviceselection.api"/>
+        <property name="resourcePackage" value="at.ac.tuwien.dsg.quelle.api"/>
         <property name="version" value="0.1.0"/>
         <property name="basePath" value="http://localhost:8080/api"/>
         <property name="title" value="MELA SES Construction Service"/>

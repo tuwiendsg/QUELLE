@@ -1057,7 +1057,7 @@
                     }
 
                     reqMonitoringDataObject.onreadystatechange = processMonitoringDataResponse;
-                    reqMonitoringDataObject.open("GET", "./api/json/requirements", true);
+                    reqMonitoringDataObject.open("GET", "./api/requirementsManagement/json/requirements", true);
                     reqMonitoringDataObject.send(null);
                 }
 
@@ -1142,7 +1142,7 @@
                     //create node trace, to know from where to remove the node
                     var data = '{ "command" : "remove", "type": "' + type + '","trace" : ' + createNodeTrace(selectedNode) + '}';
                     console.log(data);
-                    var url = "./api/management/json/requirements";
+                    var url = "./api/requirementsManagement/management/json/requirements";
                     createStructureManagementRestRequest("DELETE", "application/json", url, data);
 
 
@@ -1209,14 +1209,14 @@
 //                    var data = '{ "command" : "add", "type": "' + type + '", "trace" : ' + createNodeTrace(selectedNode) + '}';
 //                    console.log(data);
 
-//                    var url = "./api/management/json/requirements";
+//                    var url = "./api/requirementsManagement/management/json/requirements";
 //                    createStructureManagementRestRequest("PUT", "application/json", url, data);
 
                 }
 
                 function processExecutingCommand(f) {
 
-                    var url = "./api/management/json/requirements";
+                    var url = "./api/requirementsManagement/management/json/requirements";
                     var data = '"command" : "ADD", "type": "' + currentExecutingOperationType + '",' + f.data.value;
                     switch (currentExecutingOperation) {
                         case "ADD":
@@ -1380,13 +1380,13 @@
 
                     switch (selectedMetricType) {
                         case "COST":
-                            getMetricsReq.open("GET", "./api/json/costmetrics", true);
+                            getMetricsReq.open("GET", "./api/requirementsManagement/json/costmetrics", true);
                             break;
                         case "QUALITY":
-                            getMetricsReq.open("GET", "./api/json/qualitymetrics", true);
+                            getMetricsReq.open("GET", "./api/requirementsManagement/json/qualitymetrics", true);
                             break;
                         case "RESOURCE":
-                            getMetricsReq.open("GET", "./api/json/resourcemetrics", true);
+                            getMetricsReq.open("GET", "./api/requirementsManagement/json/resourcemetrics", true);
                             break;
 
                     }

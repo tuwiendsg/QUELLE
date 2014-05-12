@@ -25,8 +25,8 @@
                 </Condition>
             </Requirement>
         </Requirements>
-        <MultiLevelRequirements level="SERVICE_UNIT" name="EventProcessingTopology">
-            <Requirements Name="EventProcessingUnit">
+        <MultiLevelRequirements level="SERVICE_UNIT" name="EventProcessingUnit">
+            <Requirements Name="EventProcessingUnit.IaaS">
                 <Requirement name="CPUArchitectureReq">
                     <TargetMetric type="RESOURCE" measurementUnit="type" name="Architecture"/>
                     <Condition Type="EQUAL">
@@ -66,7 +66,7 @@
                     </Condition>
                 </Requirement>
             </Requirements>
-            <Requirements Name="MessageOrientedMiddleware">
+            <Requirements Name="EventProcessingUnit.MessageOrientedMiddleware">
                 <Requirement name="MessagingReq">
                     <TargetMetric type="RESOURCE" measurementUnit="queue" name="message"/>
                     <Condition Type="EQUAL">
@@ -79,8 +79,8 @@
         </MultiLevelRequirements>
     </MultiLevelRequirements>
     <MultiLevelRequirements level="SERVICE_TOPOLOGY" name="DataEndTopology">
-        <MultiLevelRequirements level="SERVICE_UNIT" name="DataEndTopology">
-            <Requirements Name="DataEndUnit">
+        <MultiLevelRequirements level="SERVICE_UNIT" name="DataEndUnit">
+            <Requirements Name="DataEndUnit.IaaS">
                 <Requirement name="CPUArchitectureReq">
                     <TargetMetric type="RESOURCE" measurementUnit="type" name="Architecture"/>
                     <Condition Type="EQUAL">
