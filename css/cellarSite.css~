@@ -1,0 +1,453 @@
+* {
+	margin: 0; 
+	padding: 0;
+	}
+
+html {background: #EFF1F4;}
+
+body {
+	margin: 0 auto;
+	text-align: center;
+	width: 962px;
+	
+}
+ 
+/* -------------------  layout definitions ------------------- */
+
+#main {
+	margin: 70px 0;
+	text-align: left;
+	border: 1px solid #78859A;
+	background: white;	
+	}
+	
+#header {
+	height: 150px;
+	margin: 0 0 15px 0;
+	clear: both;
+	}
+
+#header img {float: left; position: relative;}
+
+.nav {
+	background: url('../images/navbg.png') repeat-x;
+	margin: 0;
+	border-top: 2px solid black;
+	border-bottom: 1px solid orange;
+	color: solid orange;
+	}
+	
+#content {
+	width: 520px;
+	float: left;
+	margin: 30px 0;
+	}
+	
+.overview {
+	width: 200px;
+	float: right;
+	margin: 30px 30px 0 30px;
+	}
+
+#footer {
+	clear: both;
+	width: 900px;
+	margin: 30px;
+	padding-top: 30px;
+	padding-left:70px;
+	border-top: 4px solid #EFF1F4;
+	}
+
+/* ------------------- general formatting ------------------- */
+
+a {	color: #0060A1; text-decoration: none;}
+a:hover {text-decoration: underline;}
+a:active {text-decoration: underline; color: orange;}
+a:visited {color: #01476D;}
+	
+p, a, li, h1, h2, h3, td, th {
+	font-family: Helvetica, Arial, sans-serif;
+	}
+	
+p, a, li, td, th {
+	font-size: 12px;
+	font-weight: normal;
+	}
+	
+p  {
+	text-align: justify;
+	line-height: 1.3em;
+	}
+	
+h1 {
+	font-weight: normal; 
+	font-family: 'Bentham';
+	font-size: 28px;
+	text-transform: capitalize;
+	}
+	
+h2 {
+	font-weight: bold; 
+	font-size: 14px; 
+	color: black;
+	padding: 30px 0 10px 0;
+	}
+	
+h3 {
+	font-weight: bold; 
+	font-size: 12px; 
+	color: black;
+	padding: 10px 0;
+	}
+	
+strong {font-weight: bold;}
+	
+a img {
+	border: none;	
+	}
+	
+hr 
+	{
+		border: none;
+		background-color: #78859A;
+		height: 1px;
+	}
+	
+ol {
+		list-style-type: decimal;
+		list-style-image: none;
+		}
+		
+sup {
+	display: inline-block;
+	margin-top: -3px;
+	}
+		
+/* ------------------- content formatting ------------------- */	
+
+/***** header *****/
+
+.dsg {
+	font-family: serif;
+	font-size: 40px;
+	color: black;
+	padding-left: 25px;
+	float: left;
+	padding-top: 30px;
+}
+
+.tulogo {float: right; margin: 0 10px 0 0; padding-top: 70px;}
+.tulogo img {float: right; padding-left: 10px;}
+
+
+/***** main navigation *****/
+.nav li, .subnav li, .overview li {
+	list-style-type: none;
+	}
+
+.nav ul {
+	margin-left: 145px;
+	width: 555px;
+	height: 30px;
+	position: static;
+	}
+	
+.nav li {	
+	float: left;
+	width: 20%;
+	text-align: center;
+	height: 30px;
+	}
+	
+.nav a {
+	color: black;
+	font-size: 15px;
+	line-height: 30px;
+	}
+
+
+.nav .active {
+	background: white;
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	border-bottom: 2px solid white;
+	border-top: 2px solid black;
+	margin-top: -5px;
+	width: auto;
+	height: 30px;
+	-moz-border-radius-topleft: 4px;
+	-moz-border-radius-topright: 4px;
+	-webkit-border-radius-topleft: 4px;
+	-webkit-border-radius-topright: 4px;
+	border-top-left-radius: 35px;
+	border-top-right-radius: 4px;
+/*	behavior: url('css/border-radius.htc');*/
+
+/*	behavior: url('css/border-radius.htc');*/
+	}
+		
+.language li {
+	font-size: 12px;
+	padding: 10px 0 3px 10px;
+	float: right;
+	width: auto;
+	}
+	
+/* navigation color coding */
+	
+.active.research {border-top: 4px solid #356B4C;}
+.active.education {border-top: 4px solid orange;}
+.active.people {border-top: 4px solid orange;}
+.active.contact {border-top:4px solid #7200B5;}
+.active.services {border-top:4px solid #9E000C;}
+	
+
+/**** left column: sub navigation *****/	
+
+.subnav {
+	width: 130px;
+	float: left;
+	margin: 40px 0 30px 30px;
+	}
+
+.subnav h2 {
+	font-size: 12px;
+	font-weight: bold;
+	color: #78859A;
+	border-bottom: 1px solid #cdd4de;
+	padding-bottom: 3px;
+	margin-bottom: 10px;
+	width: 90px;
+}
+	
+.subnav .active {font-weight: bold;}
+.subnav .active.research {border-top: none; border-bottom: 1px solid #356B4C; color: #356B4C;}
+.subnav .active.education {border-top: none; border-bottom: 1px solid orange; color: orange;}
+.subnav .active.people {border-top: none; border-bottom: 1px solid #007EB5; color: #007EB5;}
+	
+#container .subnav li {
+	margin-bottom: 12px;
+	padding: 3px 0;
+	width: 100px;
+	}
+	
+.footer .subnav li {
+	padding: 15px;
+	width: 100px;	
+	}
+	
+/**** right column: overview section ****/
+
+.overview li {margin: 15px 0;}
+.overview p {padding-bottom: 0.5em;}
+
+.overview h2, .overview h2 > a{
+	color: #0060A1; 
+	padding: 5px 0;
+	font-size: 14px;
+	font-weight: bold;	
+	}
+	
+.overview p {
+	color: #78859A;	
+	}
+
+/***** content *****/
+
+#content p { padding: 5px 0;	}
+
+/*
+#container a[href^="http"] {
+	background: url("../images/linkexternal.png") no-repeat scroll right 40% transparent;
+	padding-right: 1.2em;
+	}
+*/
+
+#container a[rel="external"], #container a.external {
+	background: url("../images/link-external.png") no-repeat scroll right 40% transparent;
+	padding-right: 1.5em;
+	}
+	
+#container a[rel="pdflink"], #container a.pdflink {
+	background: url("../images/link-pdf.png") no-repeat scroll right 40% transparent;
+	padding-right: 1.2em;
+	}
+
+#content table {
+	border-collapse:collapse;
+	width: 100%;
+}
+
+#content table.people {margin: 30px 0 10px;}
+
+#content tr:nth-child(even) {background-color: #eef4f7;}
+
+#content table.people th, table.education th {
+	border-bottom: 1px solid #7dc1de;
+	border-top: 1px solid #7dc1de;
+	background-color: white;
+	}
+	
+th h2 {padding: 4px 0 2px 0;}
+
+#content td {
+	padding: 10px 10px 10px 0; 
+	vertical-align: middle;
+	}
+	
+#content table.people td {
+	padding: 10px 10px 10px 0; 
+	vertical-align: top;
+	}
+	
+#content table.education td {
+	padding: 10px 10px 10px 0; 
+	vertical-align: top;
+	}
+
+#content li {
+	margin-left: 15px;
+	padding: 5px;
+}
+
+#content ul li {list-style-image: url(../images/bullet.png);}
+#content ol li {margin-left: 25px; padding-left: 0px;}	
+
+.teaser {padding-bottom: 10px;}
+
+.teaser li {
+	list-style-type: square;
+	color: #78859A;
+	padding: 5px;
+	margin-left: 15px;
+	font-weight: bold;
+	}
+	
+.teaser ul, .teaser p {
+	margin-top: 10px; 
+	color: #78859A; 
+	font-weight: bold;}
+	
+.teaserbottom {clear: both;}
+	
+/* teaser: color coding */
+
+.teaserbottom.research {border-bottom: 1px solid #356B4C;}
+.research h1 {color:  #356B4C;}
+
+.teaserbottom.education {	border-bottom: 1px solid orange;}
+.education h1 {color: orange;}
+
+.teaserbottom.people {	border-bottom: 1px solid orange;}
+.people h1 {color: orange;}
+
+.teaserbottom.contact {border-bottom: 1px solid #7200B5;}
+.contact h1 {color: #7200B5;}
+
+.teaserbottom.services {border-bottom: 1px solid 	#9E000C;}
+.services h1 {color: #9E000C;}
+
+.teaserbottom.index {border-bottom: 1px solid #cdd4de;}
+.index h1 {color: #78859A;}
+
+/***** footer *****/
+
+#footer * {
+	font-size: 10px;
+	padding-bottom: 5px;	
+	}
+#footer p {
+	color: grey;
+	width: 480px;
+	display: inline-block;
+	}
+	
+#footer .subnav {
+	padding: 0;
+	margin: 0;	
+	}
+	
+#footer img {
+	float: right;
+	padding-left: 10px;	
+	}
+	
+.publicationlist p {margin-left: 30px; margin-bottom: 10px;}
+.publicationlist h3 {margin-bottom: -8px;}
+.publicationlist h3 > a {font-weight: bold;}
+
+
+/* ------------------- page specific definitions ------------------- */
+
+/**** news page and index ****/ 
+
+.lecturer, .lecturer * {
+	font-weight: bold;
+}
+
+.announcement, .address {	
+	float: left; 
+	margin-right: 10px;
+	}
+
+.announcementheader {
+	margin: 30px 0 10px 0;
+	color: #78859A;
+	border-top: 1px solid #cdd4de;
+	border-bottom: 1px solid #cdd4de;
+	padding: 5px 0;
+	clear: both;
+	}
+	
+.announcementheader h2 {
+	font-weight: bold;
+	font-size: 14px;
+	margin-left: 15%;
+	padding: 0;
+	}
+	
+.announcementheader a {
+	font-weight: bold;
+	font-size: 14px;
+	}
+	
+.announcementheader .date {
+	font-family: Helvetica, Arial, sans-serif;
+	color: black; 
+	font-weight: normal;
+	font-size: 11px;
+	width: 15%;
+	float: left;
+	padding-top: 1px;
+	}
+
+/***** people pages ****/
+
+.teaser.people img {
+	border: 1px solid orange;
+	float: right;
+	margin: 8px 0 10px 10px;
+	}
+
+.teaser.people h1 {margin: 0}
+.teaser.people p {padding: 3px;}
+h1.title {padding: 5px 0; font-size: 1em;}
+
+.overview.people .address, .overview.people p {
+	line-height: 1.4;
+	margin-top: 5px;
+	margin-left:100px;	
+	}
+	
+.note {margin-top: 20px; color: grey;}
+
+p.caption {
+	text-align: center; 
+	width: 100%;
+	color: #78859A;
+	margin-bottom: 20px;	
+	}
+
+.code {font-family: courier, 'courier new', mono}
+.author {color: #356B4C; font-weight: bold;}
+.title {margin-right: 5px; font-weight: bold;}

@@ -16,6 +16,11 @@
 
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
+   <script src="javascripts/modernizr.custom.js"></script>
+   <link rel="stylesheet" href="css/lightbox.css" media="screen"/>	
+   <script src="javascripts/jquery-1.10.2.min.js"></script>
+   <script src="javascripts/lightbox-2.6.min.js"></script>
+   
 </head>
 
 <body>
@@ -36,37 +41,126 @@
         <span class="blc"></span><span class="trc"></span>
         </div>
         <article class="markdown-body">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+          <h2>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+This page provides supplementary material for the paper:
+				<li>
+                  <b>QUELLE -- a Framework for Accelerating the Development of Elastic Systems (submitted <a href="./esocc2014_submission_17.pdf">PDF</a>)</b>, submitted to the Third European Conference on Service-Oriented and Cloud Computing - <a href="http://esocc2014.cs.manchester.ac.uk/">ESOCC 2014</a>, 2-4 September, to be held in Manchester, United Kingdom
+				</li>
+				</ul>
 
-<pre><code>$ cd your_repo_root/repo_name
+<!--<pre><code>$ cd your_repo_root/repo_name
 $ git fetch origin
 $ git checkout gh-pages
-</code></pre>
+</code></pre>-->
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+ 
+<h3>
+<a name="abstract" class="anchor" href="#abstract"><span class="octicon octicon-link"></span></a>Abstract</h3>
+
+<p> A large number of cloud providers offer diverse types of cloud
+services for constructing complex
+"cloud-native" software. However, there is a lack of supporting tools
+and mechanisms for accelerating the development of cloud-native software-defined elastic
+systems (SES) based on elasticity capabilities of cloud
+services. In this paper we
+introduce QUELLE -- a framework for evaluating and recommending SES
+deployment configurations. QUELLE presents models for describing the elasticity capabilities of cloud
+services and capturing elasticity requirements of SESs. Based on that
+QUELLE introduces novel functions and algorithms for
+quantifying the elasticity capabilities of cloud services.  QUELLE's
+algorithms can recommend SES deployment configurations from
+cloud services that both provide the required elasticity, and
+fulfill cost, quality, and resource requirements, and thus can be
+incorporated into different phases of the development of SESs. We
+present several experiments based on real-world cloud services for the
+development of an elastic machine-to-machine data-as-a-service system. </p>
+
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h3>
+<center><a href="images/process.png?[modal]=true" data-lightbox="mypic"><img src="images/process.png" alt="System process"  ></a></center>
+<p>
+To develop cloud native elastic systems, in current approaches, the developer has to manually investigate all cloud services offered by various cloud providers, and evaluate if their elasticity capabilities provide the required elasticity control options. Then, s/he can use existing design and modeling tools such as <a href="http://link.springer.com/chapter/10.1007/978-3-642-45005-1_64" >Winery</a> to design and deploy the DaaS on cloud infrastructures. Manually selecting each cloud service needed for constructing the DaaS is laborious, complex, and error prone. These problems can be reduced and the development can be accelerated if we could provide features, shown in the above figure for: 
+<ul>
+<li> capturing and modeling elasticity capabilities of cloud services from different ecosystems and multi-level SES requirements (indicated by 1) </li> 
+<li> providing  service elasticity quantification functions  for software development tools (indicated by 2)  </li> 
+<li> recommending SES configurations, which can later on be mapped to software-interpretable deployment descriptor (indicated by 3)   </li> 
+</ul>
+</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<h2>
+<a name="prototype" class="anchor" href="#prototype"><span class="octicon octicon-link"></span></a>QUELLE Prototype</h2>
+
+                        <center><a href="images/system.png?[modal]=true" data-lightbox="mypic"><img src="images/system.png" alt="System overview"  ></a></center>
+ 
+			<p> In the following we briefly describe the current QUELLE prototype.  For managing the Cloud Services Model, we implemented a graph-based <a href="http://www.neo4j.org/">Neo4j</a> Cloud Services Persistence Adapter. The population of the cloud services repository should ideally be an automatic process, with the increase in cloud providers' description APIs. However, currently we rely on available JSON description services and HTML parsing to populate our model. For SES configurations visualization, we have implemented a <a href="https://www.oasis-open.org/committees/tosc">TOSCA</a>-based output formatter for <a href="http://link.springer.com/chapter/10.1007/978-3-642-45005-1_64" >Winery</a> </i>
+</p>
+ 
+<h4>
+<a name="elasticityDependencyExample" class="anchor" href="#elasticityDependencyExample"><span class="octicon octicon-link"></span></a>Capturing Elasticity Capabilities of Cloud Services</h4>
+<center><a href="images/m3xlarge.png?lightbox[modal]=true" data-lightbox="mypic"><img src="images/m3xlarge.png" alt="m3xlarge service unit" ></a></center>
+
+<p>For explaining the concept of <b> Elasticity Dependency </b>, let's focus on <a href="https://aws.amazon.com/ec2/" >Amazon EC2</a> m3.xlarge service unit, and model its elasticity it capabilities. The above figure shows the elasticity capabilities offered by this service: one mandatory association to another service unit which decreases the elasticity (left part of the figure), one optional association to a StorageQuality and StorageQuality Cost, and 8 Cost possibilities. To further understand the elasticity of the service unit, we must focus on each individual Elasticity Capabilities. For example, focusing on the Storage Elasticity Capabilities we discover that it provides another two Elasticity Capabilities targeting Storage Quality.</p>
+				
+
+<h4>
+<a name="neo4JPersistence" class="anchor" href="#neo4JPersistence"><span class="octicon octicon-link"></span></a>Neo4J Cloud Services Persistence Adapter</h4>
+
+                        <center><a href="images/neo4JEcosystemModel.png?[modal]=true" data-lightbox="mypic"><img src="images/neo4JEcosystemModel.png" alt="Neo4J Cloud Services Model"  width="70%" height="70%" ></a></center>
+ 
+  For managing the cloud services description model introduced in the paper, we define 7 Neo4J graph node types: <i> Service</i>, <i> Resource</i>, <i> Quality</i>, <i> Cost</i>, <i> CostFunction</i>, and <i> ElasticityCapability</i>. We also define several types of entity relationships for expressing express dependencies between entities: <i> hasResource</i>, <i> hasQuality</i>, <i> hasCost</i>, <i> hasCostFunction</i>, <i> hasElasticityCapability</i>, and <i> elasticityCapabilityFor</i>. Graph nodes capture information for categorizing the type of stored entity, and not particular property values; the actual values are captured as relationships properties. For example, two <i>  Service</i> entities could target the same <i> CPU Resource</i> node, and have on their respective <i> hasResource</i> relationships the different CPU properties. This enables selecting services with specific elasticity capabilities, and then analyzing their capabilities properties from their respective relationships. 
+ 
+
+ 
+  For managing the cloud services description model introduced in the paper, we define 7 Neo4J graph node types: <i> Service</i>, <i> Resource</i>, <i> Quality</i>, <i> Cost</i>, <i> CostFunction</i>, and <i> ElasticityCapability</i>. We also define several types of entity relationships for expressing express dependencies between entities: <i> hasResource</i>, <i> hasQuality</i>, <i> hasCost</i>, <i> hasCostFunction</i>, <i> hasElasticityCapability</i>, and <i> elasticityCapabilityFor</i>. Graph nodes capture information for categorizing the type of stored entity, and not particular property values; the actual values are captured as relationships properties. For example, two <i>  Service</i> entities could target the same <i> CPU Resource</i> node, and have on their respective <i> hasResource</i> relationships the different CPU properties. This enables selecting services with specific elasticity capabilities, and then analyzing their capabilities properties from their respective relationships. 
+
+
+<h2>
+<a name="experiments" class="anchor" href="#experiments"><span class="octicon octicon-link"></span></a>Experiments</h2>
+
 
 <h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<a name="experiments1" class="anchor" href="#experiments1"><span class="octicon octicon-link"></span></a>Quantifying Elasticity of Amazon EC2 IaaS Services</h3>
+<p>
+As the meaning of elasticity might vary depending on the stakeholder, QUELLE provides a customizable elasticity quantification function relying on user-defined<b> VolatilityQ</b>,<b> ElDepQ</b>, and<b> ElPhaseQ</b> coefficients. As the user is interested in building an elastic system, s/he expects services to be allocated/deallocated often. As Amazon bills its services minimum on a hourly basis, the supplied volatility quantification coefficient is <b>VolatilityQ =</b> <b> 1/minLifetime (Hours)</b>, generating a volatility of 1 for hourly reserved services, and 1 / (365 * 24) for yearly reserved services. As the user wants to use services which have as few dependencies on other services, s/he supplies an elasticity dependency quantification coefficient<b> ElDepQ = 1 if Optional-Association,  and -1 if Mandatory-Association</b>. Finally, the supplied elasticity phase quantification coefficient is<b> ElPhaseQ = 0.33 if Instantiation-Time, 0.67 if Run-Time, 1 if Both</b>, and all elasticity dimensions have same weight coefficient<b> W_d=1</b>.  
+</p>
+<p>
+The result of quantifying the elasticity of Amazon EC2 services over cost, quality, resources, and services associations is depicted in the below figure. As the defined<b> VolatilityQ</b> function quantifies close to zero all options of reserving a service for 1 or 3 years, the cost elasticity of most services, such as <b> m3.large</b> is quantified close to 2. Amazon EC2 services which have optional dependencies have additional cost and quality control options. Thus, Amazon EC2 IaaS services with  can be associated with an<b> EBS</b> service have their service association elasticity quantified to<b> >= 1</b>, and cost elasticity quantified to <b> <= 3</b>.
+</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+ <center><a href="images/amazonElasticity.png?[modal]=true" data-lightbox="mypic"><img src="images/amazonElasticity.png" alt="Amazon IaaS Elasticity Quantification"   ></a></center>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="experiments2" class="anchor" href="#experiments2"><span class="octicon octicon-link"></span></a>Recommending SES Configurations</h3>
+<p> We aim to accelerate the development of SESs by recommending deployment configurations using cloud services providing the required elasticity for its units. Thus, we define a four phase recommendation process: (i) processing SES requirements, (ii) quantifying elasticity of cloud services, (iii) recommending elasticity-driven SES configurations, and (iv) exporting SES configurations as cloud deployment descriptor.
+</p>
+ 
+<p> Mixed SES requirements w.r.t. cost, resource and quality,  are described by the user in a top-down fashion, from the entire SES to individual units. At the  <i> SES </i> level, a requirement for a Management as a Service (MaaS) cloud services with a monitoring frequency of 5 minutes is specified, which will be applied to all SES's units. As the units belonging to the  <i> Event Processing Topology </i> level perform sensitive computation, a MaaS requirement for a monitoring cloud services providing a monitoring frequency of 1 minute is specified, overriding the SES level requirement. The  <i> Event Processing Unit </i> requires an IaaS cloud services with over 2 CPU cores and 5 GB of RAM, and a Moderate network performance. In turn, the  <i> Messaging Unit </i> requires a PaaS service of type messaging. Similarly, the  <i> Data End Unit </i> requires an IaaS cloud services providing at least 10 GB of RAM, I/O Performance of at least 1000 IOps together with at least a Moderate network performance.  
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+</br>
+The requirements XML can be downloaded from <a href="./images/requirements.xml"> here </a>
+<center><a href="images/requirements.png?[modal]=true" data-lightbox="mypic"><img src="images/requirements.png" alt="Multi-level SES requirements"   ></a></center>
+</p>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+ 
+<p>  Processing all IaaS, PaaS, and MaaS requirements refined above, our prototype generates a TOSCA  descriptor containing the recommended SES configuration. For the <i> Event Processing Topology </i>, the recommendation is visualized in the figure below using Winery, a TOSCA modeling and visualization tool. The recommendation contains an <i> m1.large </i> IaaS service fulfilling the resource and network performance quality requirements with associated <i> SpotCost </i>, due the <i> Minimum Cost </i> strategy. A PaaS <i> Monitoring Service </i> with a <i> High Monitoring Frequency </i> is recommended for the monitoring frequency requirement, and a MaaS <i> SimpleQueue </i> service for the message oriented middleware requirements. 
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<center><a href="images/eventProcessingWinery.png?[modal]=true" data-lightbox="mypic"><img src="images/eventProcessingWinery.png" alt="Multi-level SES requirements"   ></a></center>
+</p>
+
+<p>
+In a similar fashion, recommendations are provided for the <i> Data End Topology </i>,  containing an <i> m1.xlarge </i> IaaS cloud service, an <i> Elastic Block Store (EBS) </i> IaaS cloud service, with <i> IOps 4000 </i> fulfilling the I/O quality requirement, and a PaaS <i> Monitoring Service </i> at 5 minutes frequency, fulfilling the SES level monitoring requirement. 
+
+<center><a href="images/dataEndWinery.png?[modal]=true" data-lightbox="mypic"><img src="images/dataEndWinery.png" alt="Multi-level SES requirements"   ></a></center>
+</p>
+
+
+<h2><a name="contact" class="anchor" href="contact"><span class="octicon octicon-link"></span></a>Contact</h2>
+<p>For further information please contact <a href="mailto: d.moldovan@dsg.tuwien.ac.at" >Daniel Moldovan</a>.</p>
+
+
         </article>
       </div>
     </div>
