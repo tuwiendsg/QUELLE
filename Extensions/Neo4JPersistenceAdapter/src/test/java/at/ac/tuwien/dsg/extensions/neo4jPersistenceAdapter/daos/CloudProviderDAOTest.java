@@ -15,6 +15,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -472,11 +473,16 @@ public class CloudProviderDAOTest extends TestCase {
 //            }
         }
 
-        ServiceUnitDAO.persistCloudServiceUnits(cloudProviders.get(0).getServiceUnits(), access.getGraphDatabaseService());
-        try {
-            access.writeGraphAsGraphVis("./AmazonExample.dot");
-        } catch (Exception ex) {
-            Logger.getLogger(CloudProviderDAOTest.class.getName()).log(Level.SEVERE, null, ex);
+        CloudProviderDAO.persistCloudProviders(cloudProviders, access.getGraphDatabaseService());
+        
+//        ServiceUnitDAO.persistCloudServiceUnits(cloudProviders.get(0).getServiceUnits(), access.getGraphDatabaseService());
+
+        //to get individual data you use DAOS
+//        from at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos
+        for (CloudProvider cloudProvider : CloudProviderDAO.getAllCloudProviders(access.getGraphDatabaseService())) {
+            for (ServiceUnit unit : ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(cloudProvider.getId(), access.getGraphDatabaseService())) {
+                System.out.println(unit.getId() + " " + unit.getName() );
+            }
         }
 
     }

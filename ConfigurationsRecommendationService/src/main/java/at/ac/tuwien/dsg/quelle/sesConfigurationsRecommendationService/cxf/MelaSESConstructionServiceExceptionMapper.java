@@ -13,6 +13,8 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
@@ -20,6 +22,8 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 @Provider
 @Component
 public class MelaSESConstructionServiceExceptionMapper implements ExceptionMapper<Exception> {
+
+    static final Logger log = LoggerFactory.getLogger(MelaSESConstructionServiceExceptionMapper.class);
 
     @Autowired
     DocumentationProvider documentationProvider;
@@ -41,10 +45,10 @@ public class MelaSESConstructionServiceExceptionMapper implements ExceptionMappe
                     .build();
         }
 
+        log.error("Internal error", exception);
 //        return Response.serverError().entity("Internal Error: " + exception.getMessage()).build();
         return Response.serverError().entity("Internal Error: " + exception).build();
     }
-
 
     class ErrorResponse {
 
@@ -83,7 +87,6 @@ public class MelaSESConstructionServiceExceptionMapper implements ExceptionMappe
             this.message = message;
             return this;
         }
-
 
     }
 }
