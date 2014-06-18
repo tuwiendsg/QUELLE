@@ -10,23 +10,27 @@ and open the template in the editor.
               xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
    http://java.sun.com/xml/ns/javaee/web-facesconfig_1_2.xsd" 
               version="1.2"> 
-    <application> 
+<!--    <application> 
         <el-resolver>org.springframework.web.jsf.el.SpringBeanFacesELResolver</el-resolver> 
-        <!--<variable-resolver>org.springframework.web.jsf.DelegatingVariableResolver</variable-resolver>-->
-    </application>
+        <variable-resolver>org.springframework.web.jsf.DelegatingVariableResolver</variable-resolver>
+    </application>-->
     
-<!--    <managed-bean>
-        <managed-bean-name>uiController</managed-bean-name>
+    <managed-bean>
+        <managed-bean-name>uiControllerCustom</managed-bean-name>
         <managed-bean-class>at.ac.tuwien.dsg.cloudserviceselection.ui.UIController</managed-bean-class>
         <managed-bean-scope>session</managed-bean-scope>
         <managed-property>
             <property-name>controller</property-name>
-            <value>#{sesConstructionControlle}</value>
+            <value>#{sesConstructionController}</value>
         </managed-property>
         <managed-property>
             <property-name>dataAccess</property-name>
             <value>#{dataAccess}</value>
         </managed-property>
-    </managed-bean>-->
+        <managed-property>
+            <property-name>requirementsManagementController</property-name>
+            <value>requirementsManagementController</value>
+        </managed-property>
+    </managed-bean>
 
 </faces-config>
