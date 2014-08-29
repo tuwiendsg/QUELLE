@@ -11,7 +11,7 @@ import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.Cloud
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.ServiceUnitServicesRecommendation;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.util.ConfigurationUtil;
 import at.ac.tuwien.dsg.mela.common.requirements.Requirements;
-import at.ac.tuwien.dsg.quelle.cloudDescriptionParsers.CloudDescriptionParser;
+import at.ac.tuwien.dsg.quelle.descriptionParsers.CloudDescriptionParser;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.CloudServiceElasticityAnalysisEngine;
@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
  */
 @Service("sesConstructionController")
 public class SESConstructionController implements InitializingBean {
+    
 
     static final Logger log = LoggerFactory.getLogger(SESConstructionController.class);
 
@@ -56,24 +57,25 @@ public class SESConstructionController implements InitializingBean {
     private ServiceUnitComparators serviceUnitComparators;
 
     @Autowired
-    private ConfigurationUtil configurationUtil;
+//    private ConfigurationUtil configurationUtil;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        CloudProvider provider = configurationUtil.createAmazonDefaultCloudProvider();
-
-        Transaction transaction = dataAccess.startTransaction();
-
-        try {
-
-            CloudProviderDAO.persistCloudProvider(provider, dataAccess.getGraphDatabaseService());
-
-            transaction.success();
-        } catch (Exception e) {
-            e.printStackTrace();
-            transaction.failure();
-        }
-        transaction.finish();
+//        CloudProvider provider = configurationUtil.createAmazonDefaultCloudProvider();
+//
+//        Transaction transaction = dataAccess.startTransaction();
+//
+//        try {
+//
+//            CloudProviderDAO.persistCloudProvider(provider, dataAccess.getGraphDatabaseService());
+//
+//            transaction.success();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            transaction.failure();
+//        }
+//        transaction.finish();
+        updateCloudProvidersDescription();
 
     }
 

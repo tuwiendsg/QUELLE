@@ -14,6 +14,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -29,21 +30,31 @@ public class SolutionExportService {
 
     @Autowired
     private SESRecommendationOutputController recommendationOutputController;
+    
+    @Value("WineryNodeTypesOutputPath")
+    private String wineryNodeTypesOutputPath;
+    
+    
+    @Value("WineryServiceTemplatesOutputPath")
+    private String wineryServiceTemplatesOutputPath;
+    
 
     //todo: add value for configuring these with Spring
 //    private String nodeTypesOutputPath = "./OpenToscaOutput/nodeTypes";
 //    private String serviceTemplatesOutputPath = "./OpenToscaOutput/serviceTemplates";
     @POST
     @Path("cloudServicesToWinery")
-    public void outputCloudServicesAsWineryNodes(String outputPath) {
-        recommendationOutputController.outputCloudServicesAsWineryNodes(outputPath);
+    public void outputCloudServicesAsWineryNodes() {
+        recommendationOutputController.outputCloudServicesAsWineryNodes(wineryNodeTypesOutputPath);
     }
 
     @POST
     @Path("/xml/requirements")
     @Consumes("application/xml")
-    public void outputConfigurationSolutionToWinery(List<List<ServiceUnitConfigurationSolution>> configurationsList, String serviceTemplateName, String outputPath) {
-        recommendationOutputController.outputConfigurationSolutionToWinery(configurationsList, serviceTemplateName, outputPath);
+    public void outputConfigurationSolutionToWinery(List<List<ServiceUnitConfigurationSolution>> configurationsList, String serviceTemplateName) {
+        recommendationOutputController.outputConfigurationSolutionToWinery(configurationsList, serviceTemplateName, wineryServiceTemplatesOutputPath);
     }
+    
+    
 
 }

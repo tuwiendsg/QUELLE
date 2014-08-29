@@ -35,12 +35,6 @@ public class ConfigurationsRecommendationService {
     private SESConstructionController sesConstructionController;
 
     @POST
-    @Path("/updateCloudProviders")
-    public void getLatestRequirements() {
-        sesConstructionController.updateCloudProvidersDescription();
-    }
-
-    @POST
     @Path("/xml/recommendationGeneration")
     @Consumes("application/xml")
     @Produces("application/xml")
@@ -48,7 +42,7 @@ public class ConfigurationsRecommendationService {
      * Unfortunately, the result is structured a bit weird. So, each ServiceUnitServicesRecommendation
      * has the MultiLevelRequirements associated, the Requirements block, and list of possible configurations
      * The reason is that one Unit might have mapped more Requirements blocks, and each of those blocks must be
-     * mapped to a single cloud service, thus we can multiple configuration options.
+     * mapped to a single cloud service, thus we can have multiple configuration options.
      * So, 1 unit might require 1 IaaS and 1 PaaS, and each can have multiple options
      */
     public List<ServiceUnitServicesRecommendation> analyzeRequirements(MultiLevelRequirements multiLevelRequirements) {

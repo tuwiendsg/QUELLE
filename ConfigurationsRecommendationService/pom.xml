@@ -307,11 +307,15 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
+                                
                                 <copy todir="${basedir}/target/config">
                                     <fileset dir="${basedir}/config" includes="**/*"/>
                                 </copy>
-                                <!--                                <copy file="${basedir}/QUELLE-service"
-                                tofile="${basedir}/target/QUELLE-service"/>-->
+                                
+                                <copy todir="${basedir}/target/OpenToscaTemplates">
+                                    <fileset dir="${basedir}/OpenToscaTemplates" includes="**/*"/>
+                                </copy>
+                                
                             </target>
                         </configuration>
                         <goals>

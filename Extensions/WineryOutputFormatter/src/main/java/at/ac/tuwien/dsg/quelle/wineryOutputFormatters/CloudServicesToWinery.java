@@ -642,7 +642,7 @@ public class CloudServicesToWinery {
                 tosca += toToscaTopologyTemplate(levelRequirements, solutions);
                 for (List<ServiceUnitConfigurationSolution> sols : solutions.get(rootRequirements).values()) {
                     for (ServiceUnitConfigurationSolution solution : sols) {
-                        if (solution.getServiceUnit().getCategory().equals(ServiceUnit.Category.IAAS)) {
+                        if (solution.getServiceUnit().getCategory().equals(ServiceUnit.Category.IaaS)) {
                             unitsIds.add(solution.getServiceUnit());
                         }
                     }

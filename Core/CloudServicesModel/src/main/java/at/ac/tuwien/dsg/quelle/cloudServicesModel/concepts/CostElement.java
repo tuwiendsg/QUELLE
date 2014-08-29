@@ -52,7 +52,7 @@ public class CostElement extends Entity implements Comparable<CostElement> {
     //the MAP marks <upper_interval_limit, and cost>
     //the map is traversed iteratively from the lowest interval to the highest
     //example: <1,0.12> , <10,0.18>, <1024,1> will be interpreted for a 500 consumed units as 
-    //1*0.12 + 9 * 0.18 + 490*1 , so first 1, then next 9 until 19, then next 490 until 500
+    //1*0.12 + 9 * 0.18 + 490*1 , so first 1, then next 9 until 10, then next 490 until 500
     @XmlJavaTypeAdapter(CostIntervalMapAdapter.class)
     private Map<MetricValue, Double> costIntervalFunction;
 
@@ -121,6 +121,19 @@ public class CostElement extends Entity implements Comparable<CostElement> {
 
     public Map<MetricValue, Double> getCostIntervalFunction() {
         return costIntervalFunction;
+    }
+
+    public Double getCostForCostMetricValue(MetricValue value) {
+        for (Entry<MetricValue, Double> entry : costIntervalFunction.entrySet()) {
+            if (entry.getKey().compareTo(value) >= 0) {
+                return entry.getValue();
+            }
+        }
+
+        List<MetricValue> costValues = getCostIntervalsInAscendingOrder();
+        //else return max cost
+        return costIntervalFunction.get(costValues.get(costValues.size() - 1));
+
     }
 
     @Override

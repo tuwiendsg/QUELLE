@@ -260,11 +260,22 @@ public class ServiceUnit extends Entity {
         return optionalAssociations;
     }
 
-    public interface Category {
+    public enum Category {
 
-        String IAAS = "IaaS";
-        String PAASS = "OaaS";
-        String MAAS = "MaaS";
+        IaaS("IaaS"),
+        PaaS("PaaS"),
+        MaaS("MaaS");
+
+        private String name;
+
+        private Category(String name) {
+            this.name = name;
+        }
+
+        public boolean equals(String name) {
+            return this.name.equals(name);
+        }
+
     }
 
     @Override

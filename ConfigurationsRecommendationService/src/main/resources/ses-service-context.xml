@@ -16,6 +16,10 @@
     <bean id="dataAccess" class="at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess">
         <constructor-arg name="databaseLocation" value="/tmp/quelle-cloudproviders"/>
     </bean>
+    
+    <bean id="amazonFileDescriptionParser" class="at.ac.tuwien.dsg.quelle.cloudDescriptionParsers.implAmazonCloudFileDescriptionParser">
+        <property name="descriptionFile" value="file:./config/default/amazonDescription.xml"/>
+    </bean>
 
     <context:component-scan base-package="at.ac.tuwien.dsg"/>
     

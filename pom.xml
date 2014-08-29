@@ -69,6 +69,23 @@
         </repository>
     </repositories>
 
+
+  <!-- For deploying to TUW maven repository -->
+    <distributionManagement>
+        <repository>
+            <id>infosys-repo</id>
+            <name>infosys-repo</name>
+            <uniqueVersion>true</uniqueVersion>
+            <url>scp://www.infosys.tuwien.ac.at/web/website/mvn</url>
+        </repository>
+        <snapshotRepository>
+            <id>infosys-repo</id>
+            <name>infosys-repo</name>
+            <url>scp://www.infosys.tuwien.ac.at/web/website/mvn</url>
+            <uniqueVersion>true</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
         <extensions>
             <extension>

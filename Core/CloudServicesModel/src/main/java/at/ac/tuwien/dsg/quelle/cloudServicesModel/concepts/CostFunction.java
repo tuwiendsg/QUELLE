@@ -43,6 +43,7 @@ public class CostFunction extends Entity {
     //Is Entity to support ServiceUnit, or Resource and Quality options (you pay separately per I/O performance, etc)
     @XmlElement(name = "InConjunctionWith", required = false)
 //    @XmlTransient
+    //if more, means logical AND between them
     private List<Entity> appliedInConjunctionWith;
     @XmlElement(name = "CostElement", required = false)
     private List<CostElement> costElements;

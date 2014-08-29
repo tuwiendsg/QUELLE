@@ -3,10 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package at.ac.tuwien.dsg.quelle.cloudDescriptionParsers;
+package at.ac.tuwien.dsg.quelle.cloudDescriptionParsers.impl;
 
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
+import at.ac.tuwien.dsg.quelle.descriptionParsers.CloudDescriptionParser;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
@@ -38,13 +39,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
+ * Note that Amazon continuously changes its website structure, and as I also parse here HTML, 
+ * the code might not work on updated amazon website
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
 @Component
-public class AmazonCloudDescriptionParser implements CloudDescriptionParser{
+public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
-    static final org.slf4j.Logger log = LoggerFactory.getLogger(AmazonCloudDescriptionParser.class);
+    static final org.slf4j.Logger log = LoggerFactory.getLogger(AmazonCloudJSONDescriptionParser.class);
 
     private String amazonInstanceTypesURL = "http://aws.amazon.com/ec2/instance-types/";
     private String amazonInstancesReservedLightUtilizationCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-ri-light.min.js";
@@ -52,7 +55,7 @@ public class AmazonCloudDescriptionParser implements CloudDescriptionParser{
     private String amazonInstancesReservedHeavyUtilizationCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-ri-heavy.min.js";
     private String amazonInstancesOndemandCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-od.min.js";
     private String amazonInstancesSpotCostURL = "http://spot-price.s3.amazonaws.com/spot.js";
-
+    
     public CloudProvider getCloudProviderDescription() {
 
         //used to fast add cost properties
@@ -300,34 +303,34 @@ public class AmazonCloudDescriptionParser implements CloudDescriptionParser{
             //get reserved light utilization
             addReservedCostOptions("LightUtilization", amazonInstancesReservedLightUtilizationCostURL, cloudProvider, units, costDependencies);
         } catch (IOException | ParseException ex) {
-            Logger.getLogger(AmazonCloudDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AmazonCloudJSONDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         try {
             addReservedCostOptions("MediumUtilization", amazonInstancesReservedMediumUtilizationCostURL, cloudProvider, units, costDependencies);
 //            addReservedCostOptions("MediumUtilization", "http://s3.amazonaws.com/aws-assets-pricing-prod/pricing/ec2/SF-Summit-2014/medium_linux.js", cloudProvider, units, costDependencies);
         } catch (IOException | ParseException ex) {
-            Logger.getLogger(AmazonCloudDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AmazonCloudJSONDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         try {
             addReservedCostOptions("HeavyUtilization", amazonInstancesReservedHeavyUtilizationCostURL, cloudProvider, units, costDependencies);
 //            addReservedCostOptions("HeavyUtilization", "http://s3.amazonaws.com/aws-assets-pricing-prod/pricing/ec2/SF-Summit-2014/heavy_linux.js", cloudProvider, units, costDependencies);
         } catch (IOException | ParseException ex) {
-            Logger.getLogger(AmazonCloudDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AmazonCloudJSONDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         try {
             addOndemandCostOptions(amazonInstancesOndemandCostURL, cloudProvider, units, costDependencies);
 //            addReservedCostOptions("HeavyUtilization", "http://s3.amazonaws.com/aws-assets-pricing-prod/pricing/ec2/SF-Summit-2014/heavy_linux.js", cloudProvider, units, costDependencies);
         } catch (IOException | ParseException ex) {
-            Logger.getLogger(AmazonCloudDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AmazonCloudJSONDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         try {
             addSpotCostOptions(amazonInstancesSpotCostURL, cloudProvider, units, costDependencies);
         } catch (IOException | ParseException ex) {
-            Logger.getLogger(AmazonCloudDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AmazonCloudJSONDescriptionParser.class.getName()).log(Level.SEVERE, null, ex);
         }
         //add for each unit its cost elasticity dependencies
         {

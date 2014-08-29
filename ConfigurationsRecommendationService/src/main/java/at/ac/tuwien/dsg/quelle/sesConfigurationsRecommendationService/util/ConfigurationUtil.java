@@ -44,7 +44,7 @@ public class ConfigurationUtil {
 
         log.debug("Loading file://" + configDir + "/default/amazonDescription.xml");
 //        MultiLevelRequirements requirements = unmarshalFragment(MultiLevelRequirements.class, "file://" + configDir + "/default/amazonDescription.xml");
-        CloudProvider cloudProvider = unmarshalFragment(CloudProvider.class, "file:///home/daniel-tuwien/Documents/DSG_SVN/software/MELA/MELA-SESConstruction/CloudServicesSelection/config/default/amazonDescription.xml");
+        CloudProvider cloudProvider = unmarshalFragment(CloudProvider.class, "file://" + configDir + "/default/amazonDescription.xml");
         log.debug("Loaded " + cloudProvider + " as provider");
         return cloudProvider;
     }
