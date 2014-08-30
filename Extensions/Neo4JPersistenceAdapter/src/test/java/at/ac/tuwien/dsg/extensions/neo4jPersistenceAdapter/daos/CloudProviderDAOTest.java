@@ -42,15 +42,15 @@ public class CloudProviderDAOTest extends TestCase {
         access = new DataAccess("/tmp/neo4j");
         access.clear();
 
-        transaction = access.startTransaction();
+//        transaction = access.startTransaction();
         super.setUp();
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        transaction.success();
-        transaction.finish();
+//        transaction.success();
+//        transaction.finish();
         access.destroy();
     }
 

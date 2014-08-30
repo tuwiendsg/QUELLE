@@ -58,7 +58,6 @@ public class EvalautionScenario1_esocc extends TestCase {
     private ServiceUnitComparators serviceUnitComparators;
 
     private DataAccess access;
-    private Transaction transaction;
 
     public EvalautionScenario1_esocc(String testName) {
         super(testName);
@@ -68,7 +67,6 @@ public class EvalautionScenario1_esocc extends TestCase {
     protected void setUp() throws Exception {
         access = new DataAccess("/tmp/neo4j");
         access.clear();
-        transaction = access.startTransaction();
         super.setUp();
     }
 
@@ -76,8 +74,6 @@ public class EvalautionScenario1_esocc extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
 
-        transaction.success();
-        transaction.finish();
         access.getGraphDatabaseService().shutdown();
     }
 

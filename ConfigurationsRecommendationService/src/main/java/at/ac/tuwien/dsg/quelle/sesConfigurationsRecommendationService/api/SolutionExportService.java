@@ -10,6 +10,7 @@ import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control.SE
 import com.wordnik.swagger.annotations.Api;
 import java.util.List;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
@@ -42,7 +43,7 @@ public class SolutionExportService {
     //todo: add value for configuring these with Spring
 //    private String nodeTypesOutputPath = "./OpenToscaOutput/nodeTypes";
 //    private String serviceTemplatesOutputPath = "./OpenToscaOutput/serviceTemplates";
-    @POST
+    @GET
     @Path("cloudServicesToWinery")
     public void outputCloudServicesAsWineryNodes() {
         recommendationOutputController.outputCloudServicesAsWineryNodes(wineryNodeTypesOutputPath);

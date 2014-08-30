@@ -20,6 +20,7 @@ import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.helper.Se
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO.log;
 import java.util.ArrayList;
 import java.util.List;
 import org.neo4j.graphdb.Direction;
@@ -27,6 +28,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
@@ -69,6 +71,7 @@ public class CostElementDAO {
     public static List<CostElement> searchForCostElementEntities(CostElement resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<CostElement> costElements = new ArrayList<CostElement>();
+        Transaction tx = database.beginTx();
         try {
 
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
@@ -77,27 +80,27 @@ public class CostElementDAO {
                 if (node.hasProperty(KEY)) {
                     costElement.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn( "Retrieved CostElement " + resourceToSearchFor + " has no " + KEY);
+                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + KEY);
                 }
 
                 if (node.hasProperty(TYPE)) {
                     costElement.setType(node.getProperty(TYPE).toString());
                 } else {
-                    log.warn( "Retrieved CostFunction " + costElement + " has no " + TYPE);
+                    log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
                 }
 
                 if (node.hasProperty(METRIC)) {
                     String propertyKey = node.getProperty(METRIC).toString();
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                     if (metricInfo.length < 2) {
-                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                     } else {
                         Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                         costElement.setCostMetric(metric);
                     }
 
                 } else {
-                    log.warn( "Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
                 }
 
 //                //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -120,10 +123,10 @@ public class CostElementDAO {
                 costElements.add(costElement);
             }
 
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return costElements;
@@ -138,8 +141,9 @@ public class CostElementDAO {
      */
     public static CostElement searchForCostElementEntitiesUniqueResult(CostElement resourceToSearchFor, EmbeddedGraphDatabase database) {
         CostElement resourceFound = null;
-
+        Transaction tx = database.beginTx();
         try {
+
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 CostElement costElement = new CostElement();
                 costElement.setId(node.getId());
@@ -152,27 +156,27 @@ public class CostElementDAO {
                         costElement.setName(name);
                     }
                 } else {
-                    log.warn( "Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
+                    log.warn("Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
                 }
 
                 if (node.hasProperty(TYPE)) {
                     costElement.setType(node.getProperty(TYPE).toString());
                 } else {
-                    log.warn( "Retrieved CostFunction " + costElement + " has no " + TYPE);
+                    log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
                 }
 
                 if (node.hasProperty(METRIC)) {
                     String propertyKey = node.getProperty(METRIC).toString();
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                     if (metricInfo.length < 2) {
-                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                     } else {
                         Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                         costElement.setCostMetric(metric);
                     }
 
                 } else {
-                    log.warn( "Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
                 }
 
 //                //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -196,10 +200,10 @@ public class CostElementDAO {
 
                 break;
             }
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
 //        if (resourceFound == null) {
@@ -221,6 +225,7 @@ public class CostElementDAO {
 
         List<CostElement> costElements = new ArrayList<CostElement>();
 
+        Transaction tx = database.beginTx();
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -242,27 +247,27 @@ public class CostElementDAO {
                 if (node.hasProperty(KEY)) {
                     costElement.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn( "Retrieved CostElement " + nodeID + " has no " + KEY);
+                    log.warn("Retrieved CostElement " + nodeID + " has no " + KEY);
                 }
 
                 if (node.hasProperty(TYPE)) {
                     costElement.setType(node.getProperty(TYPE).toString());
                 } else {
-                    log.warn( "Retrieved CostFunction " + costElement + " has no " + TYPE);
+                    log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
                 }
 
                 if (node.hasProperty(METRIC)) {
                     String propertyKey = node.getProperty(METRIC).toString();
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                     if (metricInfo.length < 2) {
-                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                     } else {
                         Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                         costElement.setCostMetric(metric);
                     }
 
                 } else {
-                    log.warn( "Retrieved CostElement " + nodeID + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + nodeID + " has no " + METRIC);
                 }
 
                 //get properties from the RELATIONSHIP
@@ -275,7 +280,7 @@ public class CostElementDAO {
                         costElement.addCostInterval(metricValue, cost);
                     }
                 } else {
-                    log.warn( "No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + node);
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + node);
                 }
 
 //                //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -297,10 +302,10 @@ public class CostElementDAO {
 //                }
                 costElements.add(costElement);
             }
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return costElements;
@@ -309,11 +314,11 @@ public class CostElementDAO {
 
     public static CostElement getByID(Long id, EmbeddedGraphDatabase database) {
         CostElement resourceFound = null;
-
+        Transaction tx = database.beginTx();
         try {
             Node node = database.getNodeById(id);
             if (node == null) {
-                log.warn( "CostElement ID " + id + " was not found");
+                log.warn("CostElement ID " + id + " was not found");
                 return null;
             }
             CostElement costElement = new CostElement();
@@ -322,20 +327,20 @@ public class CostElementDAO {
             if (node.hasProperty(KEY)) {
                 costElement.setName(node.getProperty(KEY).toString());
             } else {
-                log.warn( "Retrieved CostElement " + id + " has no " + KEY);
+                log.warn("Retrieved CostElement " + id + " has no " + KEY);
             }
 
             if (node.hasProperty(TYPE)) {
                 costElement.setType(node.getProperty(TYPE).toString());
             } else {
-                log.warn( "Retrieved CostFunction " + costElement + " has no " + TYPE);
+                log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
             }
 
             if (node.hasProperty(METRIC)) {
                 String propertyKey = node.getProperty(METRIC).toString();
                 String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                 if (metricInfo.length < 2) {
-                    log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                    log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                 } else {
                     Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                     Double cost = Double.parseDouble(metricInfo[1]);
@@ -343,7 +348,7 @@ public class CostElementDAO {
                 }
 
             } else {
-                log.warn( "Retrieved CostElement " + id + " has no " + METRIC);
+                log.warn("Retrieved CostElement " + id + " has no " + METRIC);
             }
 
 //            //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -365,10 +370,10 @@ public class CostElementDAO {
 //            }
             resourceFound = costElement;
 
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resourceFound;
@@ -383,6 +388,7 @@ public class CostElementDAO {
     public static Node persistCostElementEntity(CostElement entityToPersist, EmbeddedGraphDatabase database) {
 
         Node resourceNode = null;
+        Transaction tx = database.beginTx();
         try {
             resourceNode = database.createNode();
             resourceNode.setProperty(KEY, entityToPersist.getName());
@@ -395,11 +401,12 @@ public class CostElementDAO {
 //                String propertyKey = metricValue.getValueRepresentation();
 //                resourceNode.setProperty(propertyKey, entry.getValue());
 //            }
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
+
         return resourceNode;
     }
 
@@ -410,7 +417,7 @@ public class CostElementDAO {
      * @param database connection to DB
      */
     public static void persistCostElementEntities(List<CostElement> resourcesToPersist, EmbeddedGraphDatabase database) {
-
+        Transaction tx = database.beginTx();
         try {
             for (CostElement entityToPersist : resourcesToPersist) {
                 Node resourceNode = database.createNode();
@@ -426,10 +433,10 @@ public class CostElementDAO {
 //                }
             }
 
+            tx.finish();
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
     }
 }

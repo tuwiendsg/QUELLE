@@ -9,20 +9,23 @@ import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess;
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.CloudServiceConfigurationRecommendation;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.dtos.ServiceUnitServicesRecommendation;
-import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.util.ConfigurationUtil;
 import at.ac.tuwien.dsg.mela.common.requirements.Requirements;
 import at.ac.tuwien.dsg.quelle.descriptionParsers.CloudDescriptionParser;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
+import at.ac.tuwien.dsg.quelle.csvOutputFormatters.AnalysisResultCSVWriter;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.CloudServiceElasticityAnalysisEngine;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.CloudServiceUnitAnalysisEngine;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.ServiceUnitComparators;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.RequirementsResolutionResult;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.ServiceUnitConfigurationSolution;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import javax.ws.rs.core.Response;
 import org.neo4j.graphdb.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +41,6 @@ import org.springframework.stereotype.Service;
  */
 @Service("sesConstructionController")
 public class SESConstructionController implements InitializingBean {
-    
 
     static final Logger log = LoggerFactory.getLogger(SESConstructionController.class);
 
@@ -81,29 +83,18 @@ public class SESConstructionController implements InitializingBean {
 
     public void updateCloudProvidersDescription() {
 
-        Transaction transaction = dataAccess.startTransaction();
+        List<CloudProvider> providers = new ArrayList<>();
 
-        try {
-
-            List<CloudProvider> providers = new ArrayList<>();
-
-            // list all MELA datasources from application context
-            Map<String, CloudDescriptionParser> cloudParsers = context.getBeansOfType(CloudDescriptionParser.class);
-            for (String name : cloudParsers.keySet()) {
-                CloudDescriptionParser cloudDescriptionParser = cloudParsers.get(name);
-                log.debug("Using CloudDescriptionParser '{}': {}  to update cloud description", name, cloudDescriptionParser);
-                CloudProvider provider = cloudDescriptionParser.getCloudProviderDescription();
-                providers.add(provider);
-            }
-
-            CloudProviderDAO.persistCloudProviders(providers, dataAccess.getGraphDatabaseService());
-
-            transaction.success();
-        } catch (Exception e) {
-            e.printStackTrace();
-            transaction.failure();
+        // list all MELA datasources from application context
+        Map<String, CloudDescriptionParser> cloudParsers = context.getBeansOfType(CloudDescriptionParser.class);
+        for (String name : cloudParsers.keySet()) {
+            CloudDescriptionParser cloudDescriptionParser = cloudParsers.get(name);
+            log.debug("Using CloudDescriptionParser '{}': {}  to update cloud description", name, cloudDescriptionParser);
+            CloudProvider provider = cloudDescriptionParser.getCloudProviderDescription();
+            providers.add(provider);
         }
-        transaction.finish();
+
+        CloudProviderDAO.persistCloudProviders(providers, dataAccess.getGraphDatabaseService());
 
     }
 
@@ -113,8 +104,6 @@ public class SESConstructionController implements InitializingBean {
      * @return
      */
     public List<ServiceUnitServicesRecommendation> analyzeRequirements(MultiLevelRequirements multiLevelRequirements) {
-
-        Transaction transaction = dataAccess.startTransaction();
 
         List<CloudProvider> cloudProviders = CloudProviderDAO.getAllCloudProviders(dataAccess.getGraphDatabaseService());
 
@@ -243,11 +232,28 @@ public class SESConstructionController implements InitializingBean {
 
         }
 
-        transaction.success();
-
-        transaction.finish();
 
         return recommendations;
+    }
+
+    public String analyzeElasticityOfProvider(String cloudProvider) {
+
+        CloudProvider provider = CloudProviderDAO.searchForCloudProvidersUniqueResult(new CloudProvider(cloudProvider), dataAccess.getGraphDatabaseService());
+        if (provider == null) {
+            String response = "Provider " + cloudProvider + " not found within providers: ";
+            for (CloudProvider p : CloudProviderDAO.getAllCloudProviders(dataAccess.getGraphDatabaseService())) {
+                response += p.getName() + ", ";
+            }
+            return response;
+        } else {
+            try {
+                return AnalysisResultCSVWriter.getAnalysisResult(cloudServiceElasticityAnalysisEngine.analyzeElasticity(provider));
+            } catch (IOException ex) {
+                log.error(ex.getMessage(), ex);
+                return ex.getMessage();
+            }
+        }
+
     }
 
 }

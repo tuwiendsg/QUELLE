@@ -31,6 +31,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class QualityDAO {
-    
+
     static final Logger log = LoggerFactory.getLogger(QualityDAO.class);
 
     public static final Label LABEL = new Label() {
@@ -134,30 +135,31 @@ public class QualityDAO {
     public static List<Quality> searchForQualityEntities(Quality resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<Quality> resources = new ArrayList<Quality>();
-
-        for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
-            Quality quality = new Quality();
-            quality.setId(node.getId());
-            if (node.hasProperty(KEY)) {
-                quality.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved Quality " + resourceToSearchFor + " has no " + KEY);
-            }
+        Transaction tx = database.beginTx();
+        try {
+            for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
+                Quality quality = new Quality();
+                quality.setId(node.getId());
+                if (node.hasProperty(KEY)) {
+                    quality.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved Quality " + resourceToSearchFor + " has no " + KEY);
+                }
 
 //                if (node.hasProperty(TYPE)) {
 //                    quality.setName(node.getProperty(TYPE).toString());
 //                } else {
 //                    log.warn( "Retrieved Quality " + resourceToSearchFor + " has no " + TYPE);
 //                }
-            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-            //and the property value is the metric value
-            for (String propertyKey : node.getPropertyKeys()) {
+                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+                //and the property value is the metric value
+                for (String propertyKey : node.getPropertyKeys()) {
 
-                //skip the key property
-                if (propertyKey.equals(KEY)) {// || propertyKey.equals(TYPE)) {
-                    continue;
-                }
-                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                    //skip the key property
+                    if (propertyKey.equals(KEY)) {// || propertyKey.equals(TYPE)) {
+                        continue;
+                    }
+                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
 //                    if (metricInfo.length < 2) {
 //                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
 //                    } else {
@@ -165,9 +167,13 @@ public class QualityDAO {
 //                        MetricValue metricValue = new MetricValue(node.getProperty(propertyKey));
 //                        quality.addProperty(metric, metricValue);
 //                    }
-            }
+                }
 
-            resources.add(quality);
+                resources.add(quality);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resources;
@@ -182,35 +188,36 @@ public class QualityDAO {
      */
     public static Quality searchForQualityEntitiesUniqueResult(Quality resourceToSearchFor, EmbeddedGraphDatabase database) {
         Quality resourceFound = null;
+        Transaction tx = database.beginTx();
+        try {
+            for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
+                Quality quality = new Quality();
+                quality.setId(node.getId());
 
-        for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
-            Quality quality = new Quality();
-            quality.setId(node.getId());
-
-            if (node.hasProperty(KEY)) {
-                String name = node.getProperty(KEY).toString();
-                if (!name.equals(resourceToSearchFor.getName())) {
-                    continue;
+                if (node.hasProperty(KEY)) {
+                    String name = node.getProperty(KEY).toString();
+                    if (!name.equals(resourceToSearchFor.getName())) {
+                        continue;
+                    } else {
+                        quality.setName(name);
+                    }
                 } else {
-                    quality.setName(name);
+                    log.warn("Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
                 }
-            } else {
-                log.warn( "Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
-            }
 
 //                if (node.hasProperty(TYPE)) {
 //                    quality.setName(node.getProperty(TYPE).toString());
 //                } else {
 //                    log.warn( "Retrieved Quality " + resourceToSearchFor + " has no " + TYPE);
 //                }
-            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-            //and the property value is the metric value
-            for (String propertyKey : node.getPropertyKeys()) {
-                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                //skip the key property
-                if (propertyKey.equals(KEY)) {//|| propertyKey.equals(TYPE)) {
-                    continue;
-                }
+                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+                //and the property value is the metric value
+                for (String propertyKey : node.getPropertyKeys()) {
+                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                    //skip the key property
+                    if (propertyKey.equals(KEY)) {//|| propertyKey.equals(TYPE)) {
+                        continue;
+                    }
 //                    if (metricInfo.length < 2) {
 //                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
 //                    } else {
@@ -218,11 +225,15 @@ public class QualityDAO {
 //                        MetricValue metricValue = new MetricValue(node.getProperty(propertyKey));
 //                        quality.addProperty(metric, metricValue);
 //                    }
-            }
-            //if we have reached this place, then we have found return the quality and can return it
-            resourceFound = quality;
+                }
+                //if we have reached this place, then we have found return the quality and can return it
+                resourceFound = quality;
 
-            break;
+                break;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
 //        if (resourceFound == null) {
@@ -245,34 +256,35 @@ public class QualityDAO {
     public static List<Quality> getQualityPropertiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<Quality> qualities = new ArrayList<Quality>();
+        Transaction tx = database.beginTx();
+        try {
+            Node parentNode = database.getNodeById(nodeID);
 
-        Node parentNode = database.getNodeById(nodeID);
+            if (parentNode == null) {
+                return qualities;
+            }
 
-        if (parentNode == null) {
-            return qualities;
-        }
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.hasQuality, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
 
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.hasQuality, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
+                Node lastPathNode = path.endNode();
+                Quality quality = new Quality();
+                quality.setId(lastPathNode.getId());
 
-            Node lastPathNode = path.endNode();
-            Quality quality = new Quality();
-            quality.setId(lastPathNode.getId());
-
-            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-            //and the property value is the metric value
-            for (String propertyKey : lastPathNode.getPropertyKeys()) {
-                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                //skip the key property
-                if (propertyKey.equals(KEY)) {
-                    quality.setName(lastPathNode.getProperty(KEY).toString());
+                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+                //and the property value is the metric value
+                for (String propertyKey : lastPathNode.getPropertyKeys()) {
+                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                    //skip the key property
+                    if (propertyKey.equals(KEY)) {
+                        quality.setName(lastPathNode.getProperty(KEY).toString());
 //                    } else if (propertyKey.equals(TYPE)) {
 //                        quality.setName(lastPathNode.getProperty(KEY).toString());
-                } else {
+                    } else {
 //                        if (metricInfo.length < 2) {
 //                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
 //                        } else {
@@ -280,46 +292,50 @@ public class QualityDAO {
 //                            MetricValue metricValue = new MetricValue(lastPathNode.getProperty(propertyKey));
 //                            quality.addProperty(metric, metricValue);
 //                        }
-                }
-            }
-
-            //get properties from the RELATIONSHIP
-            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-            //and the property value is the metric value
-            Relationship relationship = null;
-
-            for (Relationship r : parentNode.getRelationships(ServiceUnitRelationship.hasQuality, Direction.OUTGOING)) {
-                if (r.getEndNode().equals(lastPathNode)) {
-                    relationship = r;
-                }
-            }
-
-            if (relationship != null) {
-                for (String propertyKey : relationship.getPropertyKeys()) {
-                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                    if (metricInfo.length < 2) {
-                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                    } else {
-                        Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                        MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
-                        quality.addProperty(metric, metricValue);
                     }
-
                 }
-            } else {
-                log.warn( "No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
-            }
 
-            //if we have reached this place, then we have found return the quality and can return it
-            if (quality != null) {
-                //hack. if the quality has allready been added (equals is done on the DB Node),
-                //this means ServiceUnit has elasticity capability on it, and the old is also removed
-                if (qualities.contains(quality)) {
-                    qualities.remove(quality);
+                //get properties from the RELATIONSHIP
+                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+                //and the property value is the metric value
+                Relationship relationship = null;
+
+                for (Relationship r : parentNode.getRelationships(ServiceUnitRelationship.hasQuality, Direction.OUTGOING)) {
+                    if (r.getEndNode().equals(lastPathNode)) {
+                        relationship = r;
+                    }
+                }
+
+                if (relationship != null) {
+                    for (String propertyKey : relationship.getPropertyKeys()) {
+                        String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                        if (metricInfo.length < 2) {
+                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                        } else {
+                            Metric metric = new Metric(metricInfo[0], metricInfo[1]);
+                            MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
+                            quality.addProperty(metric, metricValue);
+                        }
+
+                    }
                 } else {
-                    qualities.add(quality);
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                }
+
+                //if we have reached this place, then we have found return the quality and can return it
+                if (quality != null) {
+                    //hack. if the quality has allready been added (equals is done on the DB Node),
+                    //this means ServiceUnit has elasticity capability on it, and the old is also removed
+                    if (qualities.contains(quality)) {
+                        qualities.remove(quality);
+                    } else {
+                        qualities.add(quality);
+                    }
                 }
             }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return qualities;
@@ -329,39 +345,40 @@ public class QualityDAO {
     public static List<ElasticityCapability.Dependency> getElasticityCapabilityTargetsQualityForNode(Long elasticityCapabilityNodeID, EmbeddedGraphDatabase database) {
 
         List<ElasticityCapability.Dependency> elTargets = new ArrayList<ElasticityCapability.Dependency>();
+        Transaction tx = database.beginTx();
+        try {
+            Node parentNode = database.getNodeById(elasticityCapabilityNodeID);
 
-        Node parentNode = database.getNodeById(elasticityCapabilityNodeID);
-
-        if (parentNode == null) {
-            return elTargets;
-        }
-
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
-
-            Node lastPathNode = path.endNode();
-
-            if (!lastPathNode.hasLabel(LABEL)) {
-                continue;
+            if (parentNode == null) {
+                return elTargets;
             }
 
-            Quality quality = new Quality();
-            quality.setId(lastPathNode.getId());
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
 
-            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-            //and the property value is the metric value
-            for (String propertyKey : lastPathNode.getPropertyKeys()) {
-                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                //skip the key property
-                if (propertyKey.equals(KEY)) {
-                    quality.setName(lastPathNode.getProperty(KEY).toString());
+                Node lastPathNode = path.endNode();
+
+                if (!lastPathNode.hasLabel(LABEL)) {
+                    continue;
+                }
+
+                Quality quality = new Quality();
+                quality.setId(lastPathNode.getId());
+
+                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+                //and the property value is the metric value
+                for (String propertyKey : lastPathNode.getPropertyKeys()) {
+                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                    //skip the key property
+                    if (propertyKey.equals(KEY)) {
+                        quality.setName(lastPathNode.getProperty(KEY).toString());
 //                    } else if (propertyKey.equals(TYPE)) {
 //                        quality.setName(lastPathNode.getProperty(KEY).toString());
-                } else {
+                    } else {
 //                        if (metricInfo.length < 2) {
 //                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
 //                        } else {
@@ -369,54 +386,58 @@ public class QualityDAO {
 //                            MetricValue metricValue = new MetricValue(lastPathNode.getProperty(propertyKey));
 //                            quality.addProperty(metric, metricValue);
 //                        }
+                    }
                 }
-            }
 
 //                //get properties from the RELATIONSHIP
 //                //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
 //                //and the property value is the metric value
-            Relationship relationship = path.lastRelationship();
+                Relationship relationship = path.lastRelationship();
 
-            if (relationship != null) {
-                String type = relationship.getProperty(ElasticityCapabilityDAO.TYPE).toString();
+                if (relationship != null) {
+                    String type = relationship.getProperty(ElasticityCapabilityDAO.TYPE).toString();
 
-                ElasticityCapability.Dependency dependency = new ElasticityCapability.Dependency(quality, type);
-                elTargets.add(dependency);
-                Volatility volatility = new Volatility();
+                    ElasticityCapability.Dependency dependency = new ElasticityCapability.Dependency(quality, type);
+                    elTargets.add(dependency);
+                    Volatility volatility = new Volatility();
 
-                for (String propertyKey : relationship.getPropertyKeys()) {
-                    switch (propertyKey) {
-                        case VOLATILITY_TIME_UNIT: {
-                            String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
-                            volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
-                            break;
-                        }
-                        case VOLATILITY_MAX_CHANGES: {
-                            String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
-                            volatility.setMaxNrOfChanges(Double.parseDouble(unit));
-                            break;
-                        }
-                        default:
-                            String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                            if (metricInfo.length < 2) {
-//                                log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                            } else {
-                                Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                                MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
-                                quality.addProperty(metric, metricValue);
+                    for (String propertyKey : relationship.getPropertyKeys()) {
+                        switch (propertyKey) {
+                            case VOLATILITY_TIME_UNIT: {
+                                String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
+                                volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
+                                break;
                             }
-                            break;
+                            case VOLATILITY_MAX_CHANGES: {
+                                String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
+                                volatility.setMaxNrOfChanges(Double.parseDouble(unit));
+                                break;
+                            }
+                            default:
+                                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                                if (metricInfo.length < 2) {
+//                                log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                                } else {
+                                    Metric metric = new Metric(metricInfo[0], metricInfo[1]);
+                                    MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
+                                    quality.addProperty(metric, metricValue);
+                                }
+                                break;
+                        }
+
                     }
 
+                    dependency.setVolatility(volatility);
+
+                } else {
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                    new Exception().printStackTrace();
                 }
 
-                dependency.setVolatility(volatility);
-
-            } else {
-                log.warn( "No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
-                new Exception().printStackTrace();
             }
-
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return elTargets;
@@ -425,25 +446,26 @@ public class QualityDAO {
 
     public static Quality getByID(Long id, EmbeddedGraphDatabase database) {
         Quality resourceFound = null;
+        Transaction tx = database.beginTx();
+        try {
+            Node node = database.getNodeById(id);
+            if (node == null) {
+                log.warn("Quality ID " + id + " was not found");
+                return null;
+            }
+            Quality quality = new Quality();
+            quality.setId(node.getId());
 
-        Node node = database.getNodeById(id);
-        if (node == null) {
-            log.warn( "Quality ID " + id + " was not found");
-            return null;
-        }
-        Quality quality = new Quality();
-        quality.setId(node.getId());
-
-        //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
-        //and the property value is the metric value
-        for (String propertyKey : node.getPropertyKeys()) {
-            String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-            //skip the key property
-            if (propertyKey.equals(KEY)) {
-                quality.setName(node.getProperty(KEY).toString());
+            //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
+            //and the property value is the metric value
+            for (String propertyKey : node.getPropertyKeys()) {
+                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
+                //skip the key property
+                if (propertyKey.equals(KEY)) {
+                    quality.setName(node.getProperty(KEY).toString());
 //                } else if (propertyKey.equals(TYPE)) {
 //                    quality.setName(node.getProperty(KEY).toString());
-            } else {
+                } else {
 //                    if (metricInfo.length < 2) {
 //                        log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
 //                    } else {
@@ -451,11 +473,14 @@ public class QualityDAO {
 //                        MetricValue metricValue = new MetricValue(node.getProperty(propertyKey));
 //                        quality.addProperty(metric, metricValue);
 //                    }
+                }
             }
+            //if we have reached this place, then we have found return the quality and can return it
+            resourceFound = quality;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-        //if we have reached this place, then we have found return the quality and can return it
-        resourceFound = quality;
-
         return resourceFound;
     }
 
@@ -468,16 +493,21 @@ public class QualityDAO {
     public static Node persistQualityEntity(Quality resourceToPersist, EmbeddedGraphDatabase database) {
 
         Node resourceNode = null;
-
-        resourceNode = database.createNode();
-        resourceNode.setProperty(KEY, resourceToPersist.getName());
-        resourceNode.addLabel(LABEL);
+        Transaction tx = database.beginTx();
+        try {
+            resourceNode = database.createNode();
+            resourceNode.setProperty(KEY, resourceToPersist.getName());
+            resourceNode.addLabel(LABEL);
 
 //            for (Map.Entry<Metric, MetricValue> entry : resourceToPersist.getProperties().entrySet()) {
 //                Metric metric = entry.getKey();
 //                String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
 //                resourceNode.setProperty(propertyKey, entry.getValue().getValue());
 //            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
+        }
         return resourceNode;
     }
 
@@ -488,17 +518,22 @@ public class QualityDAO {
      * @param database connection to DB
      */
     public static void persistQualityEntities(List<Quality> resourcesToPersist, EmbeddedGraphDatabase database) {
-
-        for (Quality resourceToPersist : resourcesToPersist) {
-            Node resourceNode = database.createNode();
-            resourceNode.setProperty(KEY, resourceToPersist.getName());
-            resourceNode.addLabel(LABEL);
+        Transaction tx = database.beginTx();
+        try {
+            for (Quality resourceToPersist : resourcesToPersist) {
+                Node resourceNode = database.createNode();
+                resourceNode.setProperty(KEY, resourceToPersist.getName());
+                resourceNode.addLabel(LABEL);
 
 //                for (Map.Entry<Metric, MetricValue> entry : resourceToPersist.getProperties().entrySet()) {
 //                    Metric metric = entry.getKey();
 //                    String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
 //                    resourceNode.setProperty(propertyKey, entry.getValue().getValue());
 //                }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
     }

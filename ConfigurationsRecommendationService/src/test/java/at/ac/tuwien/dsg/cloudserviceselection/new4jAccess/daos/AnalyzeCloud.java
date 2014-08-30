@@ -29,7 +29,6 @@ public class AnalyzeCloud extends TestCase {
 
     @Value("${dataAccess}")
     private DataAccess access;
-    private Transaction transaction;
 
     public AnalyzeCloud(String testName) {
         super(testName);
@@ -40,7 +39,7 @@ public class AnalyzeCloud extends TestCase {
         access = new DataAccess("/tmp/neo4j");
         access.clear();
 
-        transaction = access.startTransaction();
+     
 
         super.setUp();
     }
@@ -49,8 +48,7 @@ public class AnalyzeCloud extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         access.clear();
-        transaction.success();
-        transaction.finish();
+       
         access.getGraphDatabaseService().shutdown();
     }
 

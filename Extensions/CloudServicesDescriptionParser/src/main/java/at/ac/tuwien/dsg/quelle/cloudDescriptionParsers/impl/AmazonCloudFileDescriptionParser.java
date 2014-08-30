@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-@Component
 public class AmazonCloudFileDescriptionParser implements CloudDescriptionParser {
 
     static final org.slf4j.Logger log = LoggerFactory.getLogger(AmazonCloudFileDescriptionParser.class);

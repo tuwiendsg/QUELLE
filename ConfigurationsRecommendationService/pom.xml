@@ -293,7 +293,7 @@
                         </goals>
                         <phase>package</phase>
                         <configuration>
-                            <path>/SES</path>
+                            <path>/QUELLE</path>
                         </configuration>
                     </execution>
                 </executions>
@@ -311,10 +311,10 @@
                                 <copy todir="${basedir}/target/config">
                                     <fileset dir="${basedir}/config" includes="**/*"/>
                                 </copy>
-                                
                                 <copy todir="${basedir}/target/OpenToscaTemplates">
                                     <fileset dir="${basedir}/OpenToscaTemplates" includes="**/*"/>
                                 </copy>
+                                <copy file="${basedir}/quelle-service" tofile="${basedir}/target/quelle-service"/>
                                 
                             </target>
                         </configuration>

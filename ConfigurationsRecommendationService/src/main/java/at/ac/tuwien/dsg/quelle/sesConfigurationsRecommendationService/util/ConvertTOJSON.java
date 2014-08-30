@@ -37,6 +37,9 @@ public class ConvertTOJSON {
     }
 
     public static String convertTOJSON(MultiLevelRequirements levelRequirements) {
+        if(levelRequirements == null){
+            return "{nothing}";
+        }
         JSONObject root = new JSONObject();
         //diff is that in some cases (e.g. condition), name is displayName
         root.put("name", levelRequirements.getName());

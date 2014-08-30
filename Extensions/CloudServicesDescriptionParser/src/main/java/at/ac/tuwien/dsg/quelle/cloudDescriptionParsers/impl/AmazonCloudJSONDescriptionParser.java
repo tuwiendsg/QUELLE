@@ -36,15 +36,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * Note that Amazon continuously changes its website structure, and as I also parse here HTML, 
  * the code might not work on updated amazon website
+ * 
+ * !! Amazon changed its website, this code no longer works. Need to update
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-@Component
 public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
     static final org.slf4j.Logger log = LoggerFactory.getLogger(AmazonCloudJSONDescriptionParser.class);

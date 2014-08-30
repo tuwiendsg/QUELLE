@@ -9,7 +9,6 @@ package at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.control;
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.DataAccess;
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO;
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ServiceUnitDAO;
-import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.util.ConfigurationUtil;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MonitoredElement;
@@ -55,9 +54,7 @@ public class RequirementsManagementController implements InitializingBean {
     private DataAccess dataAccess;
     @Autowired
     private ApplicationContext context;
-
-    @Autowired
-    private ConfigurationUtil configurationUtil;
+ 
 
     private MultiLevelRequirements requirements;
 
@@ -87,7 +84,6 @@ public class RequirementsManagementController implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        requirements = configurationUtil.createDefaultRequirements();
 
         //pull new list of cloud services metrics
         updateMetrics();
@@ -117,15 +113,12 @@ public class RequirementsManagementController implements InitializingBean {
         cloudServicesMetrics.put(Metric.MetricType.COST, new ArrayList<Metric>());
         cloudServicesMetrics.put(Metric.MetricType.RESOURCE, new ArrayList<Metric>());
 
-        Transaction transaction = dataAccess.startTransaction();
         for (CloudProvider p : CloudProviderDAO.getAllCloudProviders(dataAccess.getGraphDatabaseService())) {
             for (ServiceUnit unit : ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(p.getId(), dataAccess.getGraphDatabaseService())) {
                 updateServiceUnitMetrics(unit);
             }
         }
 
-        transaction.success();
-        transaction.finish();
 
     }
 

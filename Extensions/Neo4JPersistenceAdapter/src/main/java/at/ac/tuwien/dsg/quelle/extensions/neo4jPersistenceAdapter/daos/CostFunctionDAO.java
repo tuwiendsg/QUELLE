@@ -29,6 +29,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CostElementDAO.log;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
@@ -67,7 +69,7 @@ public class CostFunctionDAO {
 
     static List<ElasticityCapability.Dependency> getElasticityCapabilitiesTargetsCostFunctionNode(long nodeID, EmbeddedGraphDatabase database) {
         List<ElasticityCapability.Dependency> elTargets = new ArrayList<ElasticityCapability.Dependency>();
-
+        Transaction tx = database.beginTx();
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -94,7 +96,7 @@ public class CostFunctionDAO {
                 if (lastPathNode.hasProperty(KEY)) {
                     costFunction.setName(lastPathNode.getProperty(KEY).toString());
                 } else {
-                    log.warn( "Retrieved CostFunction " + lastPathNode + " has no " + KEY);
+                    log.warn("Retrieved CostFunction " + lastPathNode + " has no " + KEY);
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
@@ -113,26 +115,27 @@ public class CostFunctionDAO {
                         String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
                         volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
                     } else {
-                        log.warn( "Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     if (relationship.hasProperty(VOLATILITY_MAX_CHANGES)) {
                         String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
                         volatility.setMaxNrOfChanges(Double.parseDouble(unit));
                     } else {
-                        log.warn( "Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     dependency.setVolatility(volatility);
                 } else {
-                    log.warn( "No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                    log.warn("No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
                     new Exception().printStackTrace();
                 }
 
             }
+            tx.finish();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-        } finally {
+           tx.failure(); e.printStackTrace();
         }
         return elTargets;
     }
@@ -152,7 +155,7 @@ public class CostFunctionDAO {
     public static List<CostFunction> getCostFunctionOptionsForServiceUnitNode(Long serviceUnitNodeID, Long costFunctionNodeID, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
-
+        Transaction tx = database.beginTx();
         try {
             Node costFunctionNode = database.getNodeById(costFunctionNodeID);
             Node serviceUnitNode = database.getNodeById(serviceUnitNodeID);
@@ -173,10 +176,10 @@ public class CostFunctionDAO {
                 }
             }
 
+            tx.finish();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+           tx.failure(); e.printStackTrace();
         }
 
         return costFunctions;
@@ -193,22 +196,27 @@ public class CostFunctionDAO {
     public static List<CostFunction> searchForCostFunctions(CostFunction resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
+        Transaction tx = database.beginTx();
+        try {
+            for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
+                CostFunction costFunction = new CostFunction();
+                costFunction.setId(node.getId());
+                if (node.hasProperty(KEY)) {
+                    costFunction.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved CostFunction " + resourceToSearchFor + " has no " + KEY);
+                }
 
-        for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
-            CostFunction costFunction = new CostFunction();
-            costFunction.setId(node.getId());
-            if (node.hasProperty(KEY)) {
-                costFunction.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved CostFunction " + resourceToSearchFor + " has no " + KEY);
+                //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
+                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
+                costFunctions.add(costFunction);
             }
-
-            //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-            costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
-            costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
-            costFunctions.add(costFunction);
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
         return costFunctions;
     }
 
@@ -221,34 +229,39 @@ public class CostFunctionDAO {
      */
     public static CostFunction searchForCostFunctionsUniqueResult(CostFunction resourceToSearchFor, EmbeddedGraphDatabase database) {
         CostFunction resourceFound = null;
+        Transaction tx = database.beginTx();
+        try {
+            for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
+                CostFunction costFunction = new CostFunction();
+                costFunction.setId(node.getId());
 
-        for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
-            CostFunction costFunction = new CostFunction();
-            costFunction.setId(node.getId());
-
-            if (node.hasProperty("name")) {
-                String name = node.getProperty("name").toString();
-                if (!name.equals(resourceToSearchFor.getName())) {
-                    continue;
+                if (node.hasProperty("name")) {
+                    String name = node.getProperty("name").toString();
+                    if (!name.equals(resourceToSearchFor.getName())) {
+                        continue;
+                    }
+                } else {
+                    log.warn("Retrieved CostFunction " + resourceToSearchFor + " has no name");
                 }
-            } else {
-                log.warn( "Retrieved CostFunction " + resourceToSearchFor + " has no name");
+
+                if (node.hasProperty(KEY)) {
+                    costFunction.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved CostFunction " + resourceToSearchFor + " has no " + KEY);
+                }
+
+                //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
+                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
+                resourceFound = costFunction;
+
+                break;
             }
-
-            if (node.hasProperty(KEY)) {
-                costFunction.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved CostFunction " + resourceToSearchFor + " has no " + KEY);
-            }
-
-            //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-            costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
-            costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
-            resourceFound = costFunction;
-
-            break;
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
 //        if (resourceFound == null) {
 //            log.warn( "CostFunction " + resourceToSearchFor + " was not found");
 //        }
@@ -258,24 +271,30 @@ public class CostFunctionDAO {
     public static CostFunction getCostFunction(Long id, EmbeddedGraphDatabase database) {
 
         Node costFunctionNode = database.getNodeById(id);
+        CostFunction costFunction = null;
+        Transaction tx = database.beginTx();
+        try {
+            if (costFunctionNode == null) {
+                return new CostFunction();
+            }
 
-        if (costFunctionNode == null) {
-            return new CostFunction();
+            costFunction = new CostFunction();
+            costFunction.setId(costFunctionNode.getId());
+
+            if (costFunctionNode.hasProperty(KEY)) {
+                costFunction.setName(costFunctionNode.getProperty(KEY).toString());
+            } else {
+                log.warn("Retrieved CostFunction " + costFunctionNode + " has no " + KEY);
+            }
+
+            //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
+            costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(id, database));
+            costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(id, database));
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
-        CostFunction costFunction = new CostFunction();
-        costFunction.setId(costFunctionNode.getId());
-
-        if (costFunctionNode.hasProperty(KEY)) {
-            costFunction.setName(costFunctionNode.getProperty(KEY).toString());
-        } else {
-            log.warn( "Retrieved CostFunction " + costFunctionNode + " has no " + KEY);
-        }
-
-        //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-        costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(id, database));
-        costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(id, database));
-
         return costFunction;
     }
 
@@ -292,6 +311,7 @@ public class CostFunctionDAO {
             return entities;
         }
 
+        Transaction tx = database.beginTx();
         try {
 
             TraversalDescription description = Traversal.traversal()
@@ -315,7 +335,7 @@ public class CostFunctionDAO {
                     for (String propertyKey : relationship.getPropertyKeys()) {
                         String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                         if (metricInfo.length < 2) {
-                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                         } else {
                             Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                             MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
@@ -332,7 +352,7 @@ public class CostFunctionDAO {
                     for (String propertyKey : relationship.getPropertyKeys()) {
                         String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                         if (metricInfo.length < 2) {
-                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                         } else {
                             Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                             MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
@@ -343,10 +363,10 @@ public class CostFunctionDAO {
                     entities.add(quality);
                 }
             }
+            tx.finish();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+           tx.failure(); e.printStackTrace();
         }
 
         return entities;
@@ -356,46 +376,53 @@ public class CostFunctionDAO {
     public static List<CostFunction> getCostFunctionsForNode(Long id, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
+        Transaction tx = database.beginTx();
+        try {
 
-        Node parentNode = database.getNodeById(id);
+            Node parentNode = database.getNodeById(id);
 
-        if (parentNode == null) {
-            return costFunctions;
-        }
-
-        //search from this node with ID=id the target nodes for which it has a HAS_COST_FUNCTION relationship
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.hasCostFunction, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
-
-            Node lastPathNode = path.endNode();
-            CostFunction costFunction = new CostFunction();
-            costFunction.setId(lastPathNode.getId());
-
-            if (lastPathNode.hasProperty(KEY)) {
-                costFunction.setName(lastPathNode.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved CostFunction " + lastPathNode + " has no " + KEY);
+            if (parentNode == null) {
+                return costFunctions;
             }
 
-            //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-            costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(lastPathNode.getId(), database));
-            //need to also retrieve Resurce and Quality
+            //search from this node with ID=id the target nodes for which it has a HAS_COST_FUNCTION relationship
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.hasCostFunction, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
 
-            costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(lastPathNode.getId(), database));
+                Node lastPathNode = path.endNode();
+                CostFunction costFunction = new CostFunction();
+                costFunction.setId(lastPathNode.getId());
 
-            if (costFunction != null) {
-                //hack. if the costFunction has allready been added (equals is done on the DB Node),
-                //this means ServiceUnit has elasticity capability on it, and the old is also removed
-                if (costFunctions.contains(costFunction)) {
-                    costFunctions.remove(costFunction);
+                if (lastPathNode.hasProperty(KEY)) {
+                    costFunction.setName(lastPathNode.getProperty(KEY).toString());
                 } else {
-                    costFunctions.add(costFunction);
+                    log.warn("Retrieved CostFunction " + lastPathNode + " has no " + KEY);
+                }
+
+                //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
+                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(lastPathNode.getId(), database));
+                //need to also retrieve Resurce and Quality
+
+                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(lastPathNode.getId(), database));
+
+                if (costFunction != null) {
+                    //hack. if the costFunction has allready been added (equals is done on the DB Node),
+                    //this means ServiceUnit has elasticity capability on it, and the old is also removed
+                    if (costFunctions.contains(costFunction)) {
+                        costFunctions.remove(costFunction);
+                    } else {
+                        costFunctions.add(costFunction);
+                    }
                 }
             }
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return costFunctions;
@@ -410,113 +437,11 @@ public class CostFunctionDAO {
     public static Node persistCostFunction(CostFunction resourceToPersist, EmbeddedGraphDatabase database) {
 
         Node costFunctionNode = null;
-
-        costFunctionNode = database.createNode();
-        costFunctionNode.setProperty(KEY, resourceToPersist.getName());
-
-        costFunctionNode.addLabel(LABEL);
-
-        //persist Cost Elements
-        for (CostElement costElement : resourceToPersist.getCostElements()) {
-            CostElement costElementFound = CostElementDAO.searchForCostElementEntitiesUniqueResult(costElement, database);
-            //costFunction does not exist need to persist it
-            Node costElementNode = null;
-            if (costElementFound == null) {
-                costElementNode = CostElementDAO.persistCostElementEntity(costElement, database);
-            } else {
-                //retrieve the costFunction to have its ID
-                //add relationship from CostElement to CostFunction
-                costElementNode = database.getNodeById(costElementFound.getId());
-            }
-
-            Relationship relationship = costFunctionNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.hasCostElement);
-            /**
-             * add all properties on the HAS_COST_ELEMENT relationship (thus we
-             * can have same cost element (ex cost per IO), but diff properties
-             * on the relationship (ex diff cost value and interval)
-             */
-            for (Map.Entry<MetricValue, Double> entry : costElement.getCostIntervalFunction().entrySet()) {
-                MetricValue metricValue = entry.getKey();
-                String propertyKey = metricValue.getValueRepresentation();
-                relationship.setProperty(propertyKey, entry.getValue());
-            }
-
-        }
-
-        //persist ServiceUnits for which cost is applied in conjunction with
-        for (Entity entity : resourceToPersist.getAppliedInConjunctionWith()) {
-            Node appliedInConjunctionWithNode = null;
-            if (entity instanceof ServiceUnit) {
-                ServiceUnit serviceUnit = (ServiceUnit) entity;
-                ServiceUnit appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
-                //costFunction does not exist need to persist it
-                if (appliedInConjunctionWith == null) {
-                    appliedInConjunctionWithNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
-                } else {
-                    //retrieve the costFunction to have its ID
-                    //add relationship from CostElement to CloudProvider
-                    appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
-                }
-
-                Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
-
-            } else if (entity instanceof Resource) {
-                Resource resource = (Resource) entity;
-                Resource appliedInConjunctionWith = ResourceDAO.searchForResourcesUniqueResult(resource, database);
-                //costFunction does not exist need to persist it
-                if (appliedInConjunctionWith == null) {
-                    appliedInConjunctionWithNode = ResourceDAO.persistResource(resource, database);
-                } else {
-                    //retrieve the costFunction to have its ID
-                    //add relationship from CostElement to CloudProvider
-                    appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
-                }
-                Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
-                //here I need to insert on the relationship the unit's properties
-                for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
-                    Metric metric = entry.getKey();
-                    String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                    relationship.setProperty(propertyKey, entry.getValue().getValue());
-                }
-            } else if (entity instanceof Quality) {
-                Quality quality = (Quality) entity;
-                Quality appliedInConjunctionWith = QualityDAO.searchForQualityEntitiesUniqueResult(quality, database);
-                //costFunction does not exist need to persist it
-                if (appliedInConjunctionWith == null) {
-                    appliedInConjunctionWithNode = QualityDAO.persistQualityEntity(quality, database);
-                } else {
-                    //retrieve the costFunction to have its ID
-                    //add relationship from CostElement to CloudProvider
-                    appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
-                }
-                Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
-                //here I need to insert on the relationship the unit's properties
-                for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
-                    Metric metric = entry.getKey();
-                    String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                    relationship.setProperty(propertyKey, entry.getValue().getValue());
-                }
-            }
-
-        }
-
-        return costFunctionNode;
-
-    }
-
-    /**
-     * Actually persists only CostFunction and Properties
-     *
-     * @param resourceToPersist
-     * @param database connection to DB
-     */
-    public static void persistCostFunctions(List<CostFunction> resourcesToPersist, EmbeddedGraphDatabase database) {
-
-        for (CostFunction resourceToPersist : resourcesToPersist) {
-            Node costFunctionNode = null;
-
+        Transaction tx = database.beginTx();
+        try {
             costFunctionNode = database.createNode();
             costFunctionNode.setProperty(KEY, resourceToPersist.getName());
+
             costFunctionNode.addLabel(LABEL);
 
             //persist Cost Elements
@@ -546,6 +471,7 @@ public class CostFunctionDAO {
                 }
 
             }
+
             //persist ServiceUnits for which cost is applied in conjunction with
             for (Entity entity : resourceToPersist.getAppliedInConjunctionWith()) {
                 Node appliedInConjunctionWithNode = null;
@@ -602,6 +528,120 @@ public class CostFunctionDAO {
                 }
 
             }
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
+        }
+
+        return costFunctionNode;
+
+    }
+
+    /**
+     * Actually persists only CostFunction and Properties
+     *
+     * @param resourceToPersist
+     * @param database connection to DB
+     */
+    public static void persistCostFunctions(List<CostFunction> resourcesToPersist, EmbeddedGraphDatabase database) {
+        Transaction tx = database.beginTx();
+        try {
+            for (CostFunction resourceToPersist : resourcesToPersist) {
+                Node costFunctionNode = null;
+
+                costFunctionNode = database.createNode();
+                costFunctionNode.setProperty(KEY, resourceToPersist.getName());
+                costFunctionNode.addLabel(LABEL);
+
+                //persist Cost Elements
+                for (CostElement costElement : resourceToPersist.getCostElements()) {
+                    CostElement costElementFound = CostElementDAO.searchForCostElementEntitiesUniqueResult(costElement, database);
+                    //costFunction does not exist need to persist it
+                    Node costElementNode = null;
+                    if (costElementFound == null) {
+                        costElementNode = CostElementDAO.persistCostElementEntity(costElement, database);
+                    } else {
+                    //retrieve the costFunction to have its ID
+                        //add relationship from CostElement to CostFunction
+                        costElementNode = database.getNodeById(costElementFound.getId());
+                    }
+
+                    Relationship relationship = costFunctionNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.hasCostElement);
+                    /**
+                     * add all properties on the HAS_COST_ELEMENT relationship
+                     * (thus we can have same cost element (ex cost per IO), but
+                     * diff properties on the relationship (ex diff cost value
+                     * and interval)
+                     */
+                    for (Map.Entry<MetricValue, Double> entry : costElement.getCostIntervalFunction().entrySet()) {
+                        MetricValue metricValue = entry.getKey();
+                        String propertyKey = metricValue.getValueRepresentation();
+                        relationship.setProperty(propertyKey, entry.getValue());
+                    }
+
+                }
+                //persist ServiceUnits for which cost is applied in conjunction with
+                for (Entity entity : resourceToPersist.getAppliedInConjunctionWith()) {
+                    Node appliedInConjunctionWithNode = null;
+                    if (entity instanceof ServiceUnit) {
+                        ServiceUnit serviceUnit = (ServiceUnit) entity;
+                        ServiceUnit appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                        //costFunction does not exist need to persist it
+                        if (appliedInConjunctionWith == null) {
+                            appliedInConjunctionWithNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
+                        } else {
+                        //retrieve the costFunction to have its ID
+                            //add relationship from CostElement to CloudProvider
+                            appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
+                        }
+
+                        Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
+
+                    } else if (entity instanceof Resource) {
+                        Resource resource = (Resource) entity;
+                        Resource appliedInConjunctionWith = ResourceDAO.searchForResourcesUniqueResult(resource, database);
+                        //costFunction does not exist need to persist it
+                        if (appliedInConjunctionWith == null) {
+                            appliedInConjunctionWithNode = ResourceDAO.persistResource(resource, database);
+                        } else {
+                        //retrieve the costFunction to have its ID
+                            //add relationship from CostElement to CloudProvider
+                            appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
+                        }
+                        Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
+                        //here I need to insert on the relationship the unit's properties
+                        for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
+                            Metric metric = entry.getKey();
+                            String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
+                            relationship.setProperty(propertyKey, entry.getValue().getValue());
+                        }
+                    } else if (entity instanceof Quality) {
+                        Quality quality = (Quality) entity;
+                        Quality appliedInConjunctionWith = QualityDAO.searchForQualityEntitiesUniqueResult(quality, database);
+                        //costFunction does not exist need to persist it
+                        if (appliedInConjunctionWith == null) {
+                            appliedInConjunctionWithNode = QualityDAO.persistQualityEntity(quality, database);
+                        } else {
+                        //retrieve the costFunction to have its ID
+                            //add relationship from CostElement to CloudProvider
+                            appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
+                        }
+                        Relationship relationship = costFunctionNode.createRelationshipTo(appliedInConjunctionWithNode, ServiceUnitRelationship.IN_CONJUNCTION_WITH);
+                        //here I need to insert on the relationship the unit's properties
+                        for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
+                            Metric metric = entry.getKey();
+                            String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
+                            relationship.setProperty(propertyKey, entry.getValue().getValue());
+                        }
+                    }
+
+                }
+            }
+            tx.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
     }
 }

@@ -20,6 +20,7 @@ import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.CloudServiceUnit
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 
 /**
@@ -56,5 +57,35 @@ public class AnalysisResultCSVWriter {
 
         writer.flush();
         writer.close();
+    }
+
+    public static String getAnalysisResult(List<AnalysisResult> result) throws IOException {
+        StringWriter sw = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(sw);
+
+        //write columns
+        {
+            AnalysisResult analysisResult = result.get(0);
+            String columnsLine = "Service Unit";
+            for (String key : analysisResult.getResultFields()) {
+                columnsLine += "," + key;
+            }
+            writer.write(columnsLine);
+            writer.newLine();
+
+        }
+
+        for (AnalysisResult analysisResult : result) {
+            String line = analysisResult.getUnit().getName();
+            for (String key : analysisResult.getResultFields()) {
+                line += "," + analysisResult.getValue(key);
+            }
+            writer.write(line);
+            writer.newLine();
+        }
+
+        writer.flush();
+        writer.close();
+        return sw.toString();
     }
 }

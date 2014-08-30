@@ -32,6 +32,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
@@ -73,6 +74,7 @@ public class ResourceDAO {
     public static List<Resource> searchForResources(Resource resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<Resource> resources = new ArrayList<Resource>();
+        Transaction tx = database.beginTx();
         try {
 
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
@@ -81,7 +83,7 @@ public class ResourceDAO {
                 if (node.hasProperty(KEY)) {
                     resource.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn( "Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
+                    log.warn("Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
                 }
                 //resource properties moved on the HAS_RESOURCE relationshio, so we can merge multiple ServiceUnits and spaces
 //                //the format assumed for each property of a Resource is "property key =" metricName : metricValue " (separated by :), 
@@ -108,8 +110,8 @@ public class ResourceDAO {
             }
 
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resources;
@@ -124,8 +126,9 @@ public class ResourceDAO {
      */
     public static Resource searchForResourcesUniqueResult(Resource resourceToSearchFor, EmbeddedGraphDatabase database) {
         Resource resourceFound = null;
-
+        Transaction tx = database.beginTx();
         try {
+
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 Resource resource = new Resource();
                 resource.setId(node.getId());
@@ -136,7 +139,7 @@ public class ResourceDAO {
                         continue;
                     }
                 } else {
-                    log.warn( "Retrieved Resource " + resourceToSearchFor + " has no name");
+                    log.warn("Retrieved Resource " + resourceToSearchFor + " has no name");
                 }
 
 //                //the format assumed for each property of a Resource is "property key =" metricName : metricValue " (separated by :), 
@@ -164,9 +167,8 @@ public class ResourceDAO {
                 break;
             }
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
 //        if (resourceFound == null) {
@@ -178,10 +180,11 @@ public class ResourceDAO {
     public static Resource getByID(Long id, EmbeddedGraphDatabase database) {
         Resource resourceFound = null;
 
+        Transaction tx = database.beginTx();
         try {
             Node node = database.getNodeById(id);
             if (node == null) {
-                log.warn( "Resource ID " + id + " was not found");
+                log.warn("Resource ID " + id + " was not found");
             }
             Resource resource = new Resource();
             resource.setId(node.getId());
@@ -208,9 +211,8 @@ public class ResourceDAO {
             resourceFound = resource;
 
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resourceFound;
@@ -231,6 +233,7 @@ public class ResourceDAO {
 
         List<Resource> resources = new ArrayList<Resource>();
 
+        Transaction tx = database.beginTx();
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -280,7 +283,7 @@ public class ResourceDAO {
                     for (String propertyKey : relationship.getPropertyKeys()) {
                         String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                         if (metricInfo.length < 2) {
-                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                         } else {
                             Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                             MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
@@ -289,7 +292,7 @@ public class ResourceDAO {
 
                     }
                 } else {
-                    log.warn( "No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + lastPathNode);
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + lastPathNode);
                 }
 
                 if (resource != null) {
@@ -304,9 +307,8 @@ public class ResourceDAO {
                 }
             }
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resources;
@@ -326,6 +328,7 @@ public class ResourceDAO {
 
         List<Resource> resources = new ArrayList<Resource>();
 
+        Transaction tx = database.beginTx();
         try {
             Node resourceNode = database.getNodeById(resourceNodeID);
             Node serviceUnitNode = database.getNodeById(serviceUnitNodeID);
@@ -351,7 +354,7 @@ public class ResourceDAO {
                         resource.setName(resourceNode.getProperty(KEY).toString());
                     } else {
                         if (metricInfo.length < 2) {
-                            log.warn( "Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
+                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
                         } else {
                             Metric metric = new Metric(metricInfo[0], metricInfo[1]);
                             MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
@@ -364,9 +367,8 @@ public class ResourceDAO {
             }
 
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return resources;
@@ -377,6 +379,7 @@ public class ResourceDAO {
 
         List<ElasticityCapability.Dependency> elTargets = new ArrayList<ElasticityCapability.Dependency>();
 
+        Transaction tx = database.beginTx();
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -426,27 +429,26 @@ public class ResourceDAO {
                         String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
                         volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
                     } else {
-                        log.warn( "Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     if (relationship.hasProperty(VOLATILITY_MAX_CHANGES)) {
                         String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
                         volatility.setMaxNrOfChanges(Double.parseDouble(unit));
                     } else {
-                        log.warn( "Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     dependency.setVolatility(volatility);
 
                 } else {
-                    log.warn( "No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + lastPathNode);
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + lastPathNode);
                 }
 
             }
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-        } finally {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return elTargets;
@@ -462,6 +464,7 @@ public class ResourceDAO {
     public static Node persistResource(Resource resourceToPersist, EmbeddedGraphDatabase database) {
         Node resourceNode = null;
 
+        Transaction tx = database.beginTx();
         try {
 
             resourceNode = database.createNode();
@@ -502,9 +505,8 @@ public class ResourceDAO {
 //
 //            }
         } catch (Exception e) {
-           log.error(e.getMessage(), e);
-            e.printStackTrace();
-
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
         return resourceNode;
     }
@@ -516,10 +518,10 @@ public class ResourceDAO {
      * @param database connection to DB
      */
     public static void persistResources(List<Resource> resourcesToPersist, EmbeddedGraphDatabase database) {
+        Transaction tx = database.beginTx();
+        try {
+            for (Resource resourceToPersist : resourcesToPersist) {
 
-        for (Resource resourceToPersist : resourcesToPersist) {
-
-            try {
                 Node resourceNode = database.createNode();
                 resourceNode.setProperty(KEY, resourceToPersist.getName());
                 resourceNode.addLabel(LABEL);
@@ -554,10 +556,11 @@ public class ResourceDAO {
 //                        relationship.setProperty(propertyKey, entry.getValue().getValue());
 //                    }
 //                }
-            } catch (Exception e) {
-               log.error(e.getMessage(), e);
-                e.printStackTrace();
             }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
+
     }
 }

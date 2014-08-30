@@ -53,10 +53,6 @@ public class DataAccess implements InitializingBean, DisposableBean {
         });
     }
 
-    public Transaction startTransaction() {
-        return graphDatabaseService.beginTx();
-    }
-
     public EmbeddedGraphDatabase getGraphDatabaseService() {
         return graphDatabaseService;
     }

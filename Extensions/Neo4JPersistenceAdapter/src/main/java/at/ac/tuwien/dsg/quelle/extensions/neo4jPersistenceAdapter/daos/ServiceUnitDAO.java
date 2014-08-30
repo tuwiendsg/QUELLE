@@ -27,6 +27,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ResourceDAO.log;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.ResourceIterable;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.traversal.Evaluation;
 import org.neo4j.graphdb.traversal.Evaluator;
 import org.neo4j.graphdb.traversal.Evaluators;
@@ -86,83 +88,88 @@ public class ServiceUnitDAO {
         if (parentNode == null) {
             return elTargets;
         }
-
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .evaluator(Evaluators.includeIfAcceptedByAny(new Evaluator() {
-                    public Evaluation evaluate(Path path) {
-                        if (path.endNode().hasLabel(LABEL)) {
-                            return Evaluation.INCLUDE_AND_CONTINUE;
-                        } else {
-                            return Evaluation.EXCLUDE_AND_CONTINUE;
+        Transaction tx = database.beginTx();
+        try {
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .evaluator(Evaluators.includeIfAcceptedByAny(new Evaluator() {
+                        public Evaluation evaluate(Path path) {
+                            if (path.endNode().hasLabel(LABEL)) {
+                                return Evaluation.INCLUDE_AND_CONTINUE;
+                            } else {
+                                return Evaluation.EXCLUDE_AND_CONTINUE;
+                            }
                         }
-                    }
-                }))
-                .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
+                    }))
+                    .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
 
-            Node node = path.endNode();
+                Node node = path.endNode();
 
-            ServiceUnit serviceUnit = new ServiceUnit();
-            serviceUnit.setId(node.getId());
-            if (node.hasProperty(KEY)) {
-                serviceUnit.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + node + " has no " + KEY);
-            }
+                ServiceUnit serviceUnit = new ServiceUnit();
+                serviceUnit.setId(node.getId());
+                if (node.hasProperty(KEY)) {
+                    serviceUnit.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + node + " has no " + KEY);
+                }
 
-            if (node.hasProperty(CATEGORY)) {
-                serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + node + " has no " + CATEGORY);
-            }
+                if (node.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + node + " has no " + CATEGORY);
+                }
 
-            if (node.hasProperty(SUBCATEGORY)) {
-                serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + node + " has no " + SUBCATEGORY);
-            }
+                if (node.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + node + " has no " + SUBCATEGORY);
+                }
 
-            //If this happened because you are updating something, disregard this addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
-            ////serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
-            serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
+                //If this happened because you are updating something, disregard this addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
+                ////serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
 //            //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
-            //if we have reached this place, then we have found return the quality and can return it
+                //if we have reached this place, then we have found return the quality and can return it
 
-            Relationship relationship = path.lastRelationship();
+                Relationship relationship = path.lastRelationship();
 
-            if (relationship != null) {
-                String type = relationship.getProperty(ElasticityCapabilityDAO.TYPE).toString();
-                ElasticityCapability.Dependency dependency = new ElasticityCapability.Dependency(serviceUnit, type);
-                elTargets.add(dependency);
+                if (relationship != null) {
+                    String type = relationship.getProperty(ElasticityCapabilityDAO.TYPE).toString();
+                    ElasticityCapability.Dependency dependency = new ElasticityCapability.Dependency(serviceUnit, type);
+                    elTargets.add(dependency);
 
-                Volatility volatility = new Volatility();
-                if (relationship.hasProperty(VOLATILITY_TIME_UNIT)) {
-                    String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
-                    volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
+                    Volatility volatility = new Volatility();
+                    if (relationship.hasProperty(VOLATILITY_TIME_UNIT)) {
+                        String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
+                        volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
+                    } else {
+                        log.warn("Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
+                    }
+
+                    if (relationship.hasProperty(VOLATILITY_MAX_CHANGES)) {
+                        String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
+                        volatility.setMaxNrOfChanges(Double.parseDouble(unit));
+                    } else {
+                        log.warn("Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
+                    }
+
+                    dependency.setVolatility(volatility);
+
                 } else {
-                    log.warn( "Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
+                    log.warn("No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + node.getProperty(KEY).toString());
+                    new Exception().printStackTrace();
                 }
 
-                if (relationship.hasProperty(VOLATILITY_MAX_CHANGES)) {
-                    String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
-                    volatility.setMaxNrOfChanges(Double.parseDouble(unit));
-                } else {
-                    log.warn( "Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
-                }
-
-                dependency.setVolatility(volatility);
-
-            } else {
-                log.warn( "No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + node.getProperty(KEY).toString());
-                new Exception().printStackTrace();
             }
-
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return elTargets;
@@ -182,25 +189,29 @@ public class ServiceUnitDAO {
 
         ServiceUnit elTarget = null;
         int incomingPaths = 0;
+        Transaction tx = database.beginTx();
+        try {
+            Node parentNode = database.getNodeById(id);
 
-        Node parentNode = database.getNodeById(id);
+            if (parentNode == null) {
+                log.error("Node with id " + id + " was not found");
+                return 0;
+            }
 
-        if (parentNode == null) {
-           log.error("Node with id " + id + " was not found");
-            return 0;
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.hasElasticityCapability, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+
+            //for each incoming path, if is MANDATORY_ASSOCIATION decrease the in
+            for (Path path : traverser) {
+                incomingPaths++;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.hasElasticityCapability, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-
-        //for each incoming path, if is MANDATORY_ASSOCIATION decrease the in
-        for (Path path : traverser) {
-            incomingPaths++;
-        }
-
         return incomingPaths;
     }
 
@@ -217,45 +228,49 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> searchForCloudServiceUnits(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
+        Transaction tx = database.beginTx();
+        try {
+            ResourceIterable<Node> nodes = database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName());
 
-        ResourceIterable<Node> nodes = database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName());
+            for (Node node : nodes) {
 
-        for (Node node : nodes) {
+                ServiceUnit serviceUnit = new ServiceUnit();
+                serviceUnit.setId(node.getId());
+                if (node.hasProperty(KEY)) {
+                    serviceUnit.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + KEY);
+                }
 
-            ServiceUnit serviceUnit = new ServiceUnit();
-            serviceUnit.setId(node.getId());
-            if (node.hasProperty(KEY)) {
-                serviceUnit.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + KEY);
+                if (node.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + CATEGORY);
+                }
+
+                if (node.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
+                }
+
+                //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
+                //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
+                serviceUnits.add(serviceUnit);
             }
 
-            if (node.hasProperty(CATEGORY)) {
-                serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + CATEGORY);
+            //extract other referenced members
+            for (ServiceUnit serviceUnit : serviceUnits) {
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(serviceUnit.getId(), database));
+                //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
             }
-
-            if (node.hasProperty(SUBCATEGORY)) {
-                serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
-            }
-
-            //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
-            //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
-            serviceUnits.add(serviceUnit);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
-        //extract other referenced members
-        for (ServiceUnit serviceUnit : serviceUnits) {
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
-            serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(serviceUnit.getId(), database));
-            //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
-        }
-
         return serviceUnits;
     }
 
@@ -269,50 +284,55 @@ public class ServiceUnitDAO {
     public static ServiceUnit searchForCloudServiceUnitsUniqueResult(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
         ServiceUnit serviceUnitFound = null;
-
-        for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName())) {
+        Transaction tx = database.beginTx();
+        try {
+            for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName())) {
 //                ServiceUnit resource = new ServiceUnit();
 //                resource.setId(node.getId());
 
-            if (node.hasProperty("name")) {
-                String name = node.getProperty("name").toString();
-                if (!name.equals(serviceUnitToSearchFor.getName())) {
-                    continue;
+                if (node.hasProperty("name")) {
+                    String name = node.getProperty("name").toString();
+                    if (!name.equals(serviceUnitToSearchFor.getName())) {
+                        continue;
+                    }
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no name");
                 }
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no name");
+
+                ServiceUnit serviceUnit = new ServiceUnit();
+                serviceUnit.setId(node.getId());
+                if (node.hasProperty(KEY)) {
+                    serviceUnit.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + KEY);
+                }
+
+                if (node.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + CATEGORY);
+                }
+
+                if (node.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
+                }
+
+                //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
+                //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
+                //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
+                serviceUnitFound = serviceUnit;
+
+                break;
             }
-
-            ServiceUnit serviceUnit = new ServiceUnit();
-            serviceUnit.setId(node.getId());
-            if (node.hasProperty(KEY)) {
-                serviceUnit.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + KEY);
-            }
-
-            if (node.hasProperty(CATEGORY)) {
-                serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + CATEGORY);
-            }
-
-            if (node.hasProperty(SUBCATEGORY)) {
-                serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
-            }
-
-            //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
-            //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
-            serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
-            //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
-            serviceUnitFound = serviceUnit;
-
-            break;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
 //        if (serviceUnitFound == null) {
@@ -324,51 +344,56 @@ public class ServiceUnitDAO {
     public static ServiceUnit getByID(Long nodeID, EmbeddedGraphDatabase database) {
 
         ServiceUnit serviceUnit = null;
+        Transaction tx = database.beginTx();
+        try {
+            Node parentNode = database.getNodeById(nodeID);
 
-        Node parentNode = database.getNodeById(nodeID);
-
-        if (parentNode == null) {
-            return serviceUnit;
-        }
-
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
-
-            Node node = path.endNode();
-            if (!node.hasLabel(LABEL)) {
-                continue;
-            }
-            serviceUnit = new ServiceUnit();
-            serviceUnit.setId(node.getId());
-
-            if (node.hasProperty(KEY)) {
-                serviceUnit.setName(node.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + nodeID + " has no " + KEY);
+            if (parentNode == null) {
+                return serviceUnit;
             }
 
-            if (node.hasProperty(CATEGORY)) {
-                serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + nodeID + " has no " + CATEGORY);
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
+
+                Node node = path.endNode();
+                if (!node.hasLabel(LABEL)) {
+                    continue;
+                }
+                serviceUnit = new ServiceUnit();
+                serviceUnit.setId(node.getId());
+
+                if (node.hasProperty(KEY)) {
+                    serviceUnit.setName(node.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + nodeID + " has no " + KEY);
+                }
+
+                if (node.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + nodeID + " has no " + CATEGORY);
+                }
+
+                if (node.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + nodeID + " has no " + SUBCATEGORY);
+                }
+
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
+                //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
+
             }
-
-            if (node.hasProperty(SUBCATEGORY)) {
-                serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + nodeID + " has no " + SUBCATEGORY);
-            }
-
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(node.getId(), database));
-            serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
-            //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
-
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
 
         return serviceUnit;
@@ -377,62 +402,66 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> getCloudServiceUnitsForCloudProviderNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
-
-        Node parentNode = null;
-
+        Transaction tx = database.beginTx();
         try {
-            parentNode = database.getNodeById(nodeID);
+            Node parentNode = null;
+
+            try {
+                parentNode = database.getNodeById(nodeID);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+
+            if (parentNode == null) {
+                return serviceUnits;
+            }
+
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.providesServiceUnit, Direction.OUTGOING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+            for (Path path : traverser) {
+
+                Node lastPathNode = path.endNode();
+                ServiceUnit serviceUnit = new ServiceUnit();
+                serviceUnit.setId(lastPathNode.getId());
+
+                if (lastPathNode.hasProperty(KEY)) {
+                    serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
+                }
+
+                if (lastPathNode.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
+                }
+
+                if (lastPathNode.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
+                } else {
+                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
+                }
+
+                //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
+                //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
+                serviceUnits.add(serviceUnit);
+
+            }
+
+            for (ServiceUnit serviceUnit : serviceUnits) {
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
+                //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
-        if (parentNode == null) {
-            return serviceUnits;
-        }
-
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.providesServiceUnit, Direction.OUTGOING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-        for (Path path : traverser) {
-
-            Node lastPathNode = path.endNode();
-            ServiceUnit serviceUnit = new ServiceUnit();
-            serviceUnit.setId(lastPathNode.getId());
-
-            if (lastPathNode.hasProperty(KEY)) {
-                serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
-            }
-
-            if (lastPathNode.hasProperty(CATEGORY)) {
-                serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
-            }
-
-            if (lastPathNode.hasProperty(SUBCATEGORY)) {
-                serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
-            } else {
-                log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
-            }
-
-            //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
-            //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
-            serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
-            serviceUnits.add(serviceUnit);
-
-        }
-
-        for (ServiceUnit serviceUnit : serviceUnits) {
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
-            //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
-        }
-
         return serviceUnits;
 
     }
@@ -448,79 +477,83 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> getConnectedComponentsByElasticityCapabilitiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
-
-        Node parentNode = null;
-
+        Transaction tx = database.beginTx();
         try {
-            parentNode = database.getNodeById(nodeID);
+            Node parentNode = null;
+
+            try {
+                parentNode = database.getNodeById(nodeID);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+
+            if (parentNode == null) {
+                return serviceUnits;
+            }
+
+            //first extract ServiceUnit instances that target this one
+            TraversalDescription description = Traversal.traversal()
+                    .evaluator(Evaluators.excludeStartPosition())
+                    .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.INCOMING)
+                    .uniqueness(Uniqueness.NODE_PATH);
+            Traverser traverser = description.traverse(parentNode);
+
+            for (Path path_1 : traverser) {
+
+                //this node is ElasticityCapability, so from it we need to navigate using the hasElasticityCapability relationship
+                Node lastPathNode = path_1.endNode();
+
+                TraversalDescription elCapabiliyTraversal = Traversal.traversal()
+                        .evaluator(Evaluators.excludeStartPosition())
+                        .relationships(ServiceUnitRelationship.hasElasticityCapability, Direction.INCOMING)
+                        .uniqueness(Uniqueness.NODE_PATH);
+                Traverser elCapabiliyTraverser = elCapabiliyTraversal.traverse(parentNode);
+
+                for (Path path : elCapabiliyTraverser) {
+                    //if not service unit, continue
+                    //extract only service units as associated. the Quality, Resource and Cost are
+                    //configuration options
+                    if (!lastPathNode.hasLabel(LABEL)) {
+                        continue;
+                    }
+                    ServiceUnit serviceUnit = new ServiceUnit();
+                    serviceUnit.setId(lastPathNode.getId());
+
+                    if (lastPathNode.hasProperty(KEY)) {
+                        serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
+                    } else {
+                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
+                    }
+
+                    if (lastPathNode.hasProperty(CATEGORY)) {
+                        serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
+                    } else {
+                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
+                    }
+
+                    if (lastPathNode.hasProperty(SUBCATEGORY)) {
+                        serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
+                    } else {
+                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
+                    }
+
+                    //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
+                    //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
+                    serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
+                    serviceUnits.add(serviceUnit);
+                }
+            }
+
+            for (ServiceUnit serviceUnit : serviceUnits) {
+                serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
+                serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
+                //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
-
-        if (parentNode == null) {
-            return serviceUnits;
-        }
-
-        //first extract ServiceUnit instances that target this one
-        TraversalDescription description = Traversal.traversal()
-                .evaluator(Evaluators.excludeStartPosition())
-                .relationships(ServiceUnitRelationship.elasticityCapabilityFor, Direction.INCOMING)
-                .uniqueness(Uniqueness.NODE_PATH);
-        Traverser traverser = description.traverse(parentNode);
-
-        for (Path path_1 : traverser) {
-
-            //this node is ElasticityCapability, so from it we need to navigate using the hasElasticityCapability relationship
-            Node lastPathNode = path_1.endNode();
-
-            TraversalDescription elCapabiliyTraversal = Traversal.traversal()
-                    .evaluator(Evaluators.excludeStartPosition())
-                    .relationships(ServiceUnitRelationship.hasElasticityCapability, Direction.INCOMING)
-                    .uniqueness(Uniqueness.NODE_PATH);
-            Traverser elCapabiliyTraverser = elCapabiliyTraversal.traverse(parentNode);
-
-            for (Path path : elCapabiliyTraverser) {
-                //if not service unit, continue
-                //extract only service units as associated. the Quality, Resource and Cost are
-                //configuration options
-                if (!lastPathNode.hasLabel(LABEL)) {
-                    continue;
-                }
-                ServiceUnit serviceUnit = new ServiceUnit();
-                serviceUnit.setId(lastPathNode.getId());
-
-                if (lastPathNode.hasProperty(KEY)) {
-                    serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
-                } else {
-                    log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
-                }
-
-                if (lastPathNode.hasProperty(CATEGORY)) {
-                    serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
-                } else {
-                    log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
-                }
-
-                if (lastPathNode.hasProperty(SUBCATEGORY)) {
-                    serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
-                } else {
-                    log.warn( "Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
-                }
-
-                //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
-                //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
-                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
-                serviceUnits.add(serviceUnit);
-            }
-        }
-
-        for (ServiceUnit serviceUnit : serviceUnits) {
-            serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
-            serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
-            //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
-        }
-
         return serviceUnits;
 
     }
@@ -534,125 +567,8 @@ public class ServiceUnitDAO {
     public static Node persistServiceUnit(ServiceUnit serviceUnitToPersist, EmbeddedGraphDatabase database) {
 
         Node serviceUnitNode = null;
-
-        serviceUnitNode = database.createNode();
-        serviceUnitNode.setProperty(KEY, serviceUnitToPersist.getName());
-        serviceUnitNode.setProperty(CATEGORY, serviceUnitToPersist.getCategory());
-        serviceUnitNode.setProperty(SUBCATEGORY, serviceUnitToPersist.getSubcategory());
-        serviceUnitNode.addLabel(LABEL);
-
-        //persist Resources
-        for (Resource resource : serviceUnitToPersist.getResourceProperties()) {
-            Resource resourceFound = ResourceDAO.searchForResourcesUniqueResult(resource, database);
-
-            //quality does not exist need to persist it
-            Node persistedElement = null;
-            Relationship relationship = null;
-            if (resourceFound == null) {
-                persistedElement = ResourceDAO.persistResource(resource, database);
-                relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
-            } else {
-                persistedElement = database.getNodeById(resourceFound.getId());
-                //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
-                //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
-//                boolean relExists = false;
-//                for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasResource)) {
-//                    if (r.getStartNode().equals(serviceUnitNode)) {
-//                        relExists = true;
-//                        relationship = r;
-//                        break;
-//                    }
-//                }
-//                if (!relExists) {
-                relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
-//                }
-            }
-
-            for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
-                Metric metric = entry.getKey();
-                String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                relationship.setProperty(propertyKey, entry.getValue().getValue());
-            }
-        }
-
-        //persist Quality
-        for (Quality quality : serviceUnitToPersist.getQualityProperties()) {
-            Quality qualityFound = QualityDAO.searchForQualityEntitiesUniqueResult(quality, database);
-
-            //quality does not exist need to persist it
-            Node persistedElement = null;
-            Relationship relationship = null;
-            if (qualityFound == null) {
-                persistedElement = QualityDAO.persistQualityEntity(quality, database);
-                relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
-            } else {
-                persistedElement = database.getNodeById(qualityFound.getId());
-                //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
-                //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
-//                boolean relExists = false;
-//                for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasQuality)) {
-//                    if (r.getStartNode().equals(serviceUnitNode)) {
-//                        relExists = true;
-//                        relationship = r;
-//                        break;
-//                    }
-//                }
-//                if (!relExists) {
-                relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
-//                }
-            }
-
-            /**
-             * add all resource Quality properties on the HAS_QUALITY
-             * relationship (thus we can have same quality (ex storageOptimized)
-             * targeted by diff resources with diff quality properties (ex
-             * IOps),
-             */
-            for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
-                Metric metric = entry.getKey();
-                String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                relationship.setProperty(propertyKey, entry.getValue().getValue());
-            }
-
-        }
-
-        //ALWAYS create new Cost Function
-        for (CostFunction costFunction : serviceUnitToPersist.getCostFunctions()) {
-            Node costElementNode = CostFunctionDAO.persistCostFunction(costFunction, database);
-            serviceUnitNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.hasCostFunction);
-        }
-
-        //persist ElasticityCapabilities
-        for (ElasticityCapability characteristic : serviceUnitToPersist.getElasticityCapabilities()) {
-            ElasticityCapability charactFound = ElasticityCapabilityDAO.searchForElasticityCapabilitiesUniqueResult(characteristic, database);
-            //costFunction does not exist need to persist it
-            Node persistedElement = null;
-            if (charactFound == null) {
-                persistedElement = ElasticityCapabilityDAO.persistElasticityCapability(characteristic, database);
-                //create relationship only if newly eprsisted node (we do not create multiple relationshipts towards ElasticityCapability
-
-            } else {
-                persistedElement = database.getNodeById(charactFound.getId());
-            }
-            Relationship relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasElasticityCapability);
-//          //add el capability type and phase on the relationship    
-//            relationship.setProperty(ElasticityCapabilityDAO.TYPE, characteristic.getType());
-            relationship.setProperty(ElasticityCapabilityDAO.PHASE, characteristic.getPhase());
-
-//            Volatility v = characteristic.getVolatility();
-//            if (v != null) {
-//                relationship.setProperty(VOLATILITY_TIME_UNIT, v.getMinimumLifetimeInHours());
-//                relationship.setProperty(VOLATILITY_MAX_CHANGES, v.getMaxNrOfChanges());
-//            }
-        }
-        return serviceUnitNode;
-    }
-
-    public static void persistCloudServiceUnits(List<ServiceUnit> cloudServiceUnitsToPersist, EmbeddedGraphDatabase database) {
-
-        for (ServiceUnit serviceUnitToPersist : cloudServiceUnitsToPersist) {
-            Node serviceUnitNode = null;
-
+        Transaction tx = database.beginTx();
+        try {
             serviceUnitNode = database.createNode();
             serviceUnitNode.setProperty(KEY, serviceUnitToPersist.getName());
             serviceUnitNode.setProperty(CATEGORY, serviceUnitToPersist.getCategory());
@@ -673,17 +589,17 @@ public class ServiceUnitDAO {
                     persistedElement = database.getNodeById(resourceFound.getId());
                     //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
                     //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
-//                    boolean relExists = false;
-//                    for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasResource)) {
-//                        if (r.getStartNode().equals(serviceUnitNode)) {
-//                            relExists = true;
-//                            relationship = r;
-//                            break;
-//                        }
+//                boolean relExists = false;
+//                for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasResource)) {
+//                    if (r.getStartNode().equals(serviceUnitNode)) {
+//                        relExists = true;
+//                        relationship = r;
+//                        break;
 //                    }
-//                    if (!relExists) {
+//                }
+//                if (!relExists) {
                     relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
-//                    }
+//                }
                 }
 
                 for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
@@ -705,20 +621,19 @@ public class ServiceUnitDAO {
                     relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
                 } else {
                     persistedElement = database.getNodeById(qualityFound.getId());
-                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
                     //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
-                    //WAS REMOVED because when you have multiple possible qualities
-//                    boolean relExists = false;
-//                    for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasQuality)) {
-//                        if (r.getStartNode().equals(serviceUnitNode)) {
-//                            relExists = true;
-//                            relationship = r;
-//                            break;
-//                        }
+                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
+//                boolean relExists = false;
+//                for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasQuality)) {
+//                    if (r.getStartNode().equals(serviceUnitNode)) {
+//                        relExists = true;
+//                        relationship = r;
+//                        break;
 //                    }
-//                    if (!relExists) {
+//                }
+//                if (!relExists) {
                     relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
-//                    }
+//                }
                 }
 
                 /**
@@ -753,18 +668,146 @@ public class ServiceUnitDAO {
                 } else {
                     persistedElement = database.getNodeById(charactFound.getId());
                 }
-
                 Relationship relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasElasticityCapability);
-//                relationship.setProperty(ElasticityCapabilityDAO.TYPE, characteristic.getType());
+//          //add el capability type and phase on the relationship    
+//            relationship.setProperty(ElasticityCapabilityDAO.TYPE, characteristic.getType());
                 relationship.setProperty(ElasticityCapabilityDAO.PHASE, characteristic.getPhase());
+
+//            Volatility v = characteristic.getVolatility();
+//            if (v != null) {
+//                relationship.setProperty(VOLATILITY_TIME_UNIT, v.getMinimumLifetimeInHours());
+//                relationship.setProperty(VOLATILITY_MAX_CHANGES, v.getMaxNrOfChanges());
+//            }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
+        }
+        return serviceUnitNode;
+    }
+
+    public static void persistCloudServiceUnits(List<ServiceUnit> cloudServiceUnitsToPersist, EmbeddedGraphDatabase database) {
+        Transaction tx = database.beginTx();
+        try {
+            for (ServiceUnit serviceUnitToPersist : cloudServiceUnitsToPersist) {
+                Node serviceUnitNode = null;
+
+                serviceUnitNode = database.createNode();
+                serviceUnitNode.setProperty(KEY, serviceUnitToPersist.getName());
+                serviceUnitNode.setProperty(CATEGORY, serviceUnitToPersist.getCategory());
+                serviceUnitNode.setProperty(SUBCATEGORY, serviceUnitToPersist.getSubcategory());
+                serviceUnitNode.addLabel(LABEL);
+
+                //persist Resources
+                for (Resource resource : serviceUnitToPersist.getResourceProperties()) {
+                    Resource resourceFound = ResourceDAO.searchForResourcesUniqueResult(resource, database);
+
+                    //quality does not exist need to persist it
+                    Node persistedElement = null;
+                    Relationship relationship = null;
+                    if (resourceFound == null) {
+                        persistedElement = ResourceDAO.persistResource(resource, database);
+                        relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
+                    } else {
+                        persistedElement = database.getNodeById(resourceFound.getId());
+                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
+                        //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
+//                    boolean relExists = false;
+//                    for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasResource)) {
+//                        if (r.getStartNode().equals(serviceUnitNode)) {
+//                            relExists = true;
+//                            relationship = r;
+//                            break;
+//                        }
+//                    }
+//                    if (!relExists) {
+                        relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
+//                    }
+                    }
+
+                    for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
+                        Metric metric = entry.getKey();
+                        String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
+                        relationship.setProperty(propertyKey, entry.getValue().getValue());
+                    }
+                }
+
+                //persist Quality
+                for (Quality quality : serviceUnitToPersist.getQualityProperties()) {
+                    Quality qualityFound = QualityDAO.searchForQualityEntitiesUniqueResult(quality, database);
+
+                    //quality does not exist need to persist it
+                    Node persistedElement = null;
+                    Relationship relationship = null;
+                    if (qualityFound == null) {
+                        persistedElement = QualityDAO.persistQualityEntity(quality, database);
+                        relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
+                    } else {
+                        persistedElement = database.getNodeById(qualityFound.getId());
+                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
+                        //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
+                        //WAS REMOVED because when you have multiple possible qualities
+//                    boolean relExists = false;
+//                    for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasQuality)) {
+//                        if (r.getStartNode().equals(serviceUnitNode)) {
+//                            relExists = true;
+//                            relationship = r;
+//                            break;
+//                        }
+//                    }
+//                    if (!relExists) {
+                        relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
+//                    }
+                    }
+
+                    /**
+                     * add all resource Quality properties on the HAS_QUALITY
+                     * relationship (thus we can have same quality (ex
+                     * storageOptimized) targeted by diff resources with diff
+                     * quality properties (ex IOps),
+                     */
+                    for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
+                        Metric metric = entry.getKey();
+                        String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
+                        relationship.setProperty(propertyKey, entry.getValue().getValue());
+                    }
+
+                }
+
+                //ALWAYS create new Cost Function
+                for (CostFunction costFunction : serviceUnitToPersist.getCostFunctions()) {
+                    Node costElementNode = CostFunctionDAO.persistCostFunction(costFunction, database);
+                    serviceUnitNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.hasCostFunction);
+                }
+
+                //persist ElasticityCapabilities
+                for (ElasticityCapability characteristic : serviceUnitToPersist.getElasticityCapabilities()) {
+                    ElasticityCapability charactFound = ElasticityCapabilityDAO.searchForElasticityCapabilitiesUniqueResult(characteristic, database);
+                    //costFunction does not exist need to persist it
+                    Node persistedElement = null;
+                    if (charactFound == null) {
+                        persistedElement = ElasticityCapabilityDAO.persistElasticityCapability(characteristic, database);
+                        //create relationship only if newly eprsisted node (we do not create multiple relationshipts towards ElasticityCapability
+
+                    } else {
+                        persistedElement = database.getNodeById(charactFound.getId());
+                    }
+
+                    Relationship relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasElasticityCapability);
+//                relationship.setProperty(ElasticityCapabilityDAO.TYPE, characteristic.getType());
+                    relationship.setProperty(ElasticityCapabilityDAO.PHASE, characteristic.getPhase());
 
 //                Volatility v = characteristic.getVolatility();
 //                if (v != null) {
 //                    relationship.setProperty(VOLATILITY_TIME_UNIT, v.getMinimumLifetimeInHours());
 //                    relationship.setProperty(VOLATILITY_MAX_CHANGES, v.getMaxNrOfChanges());
 //                }
-            }
+                }
 
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+           tx.failure(); e.printStackTrace();
         }
     }
 }
