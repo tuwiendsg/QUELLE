@@ -19,8 +19,12 @@ package at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos;
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.helper.ServiceUnitRelationship;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -35,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class CloudProviderDAO {
+public class CloudProviderDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(CloudProviderDAO.class);
 
@@ -46,6 +50,9 @@ public class CloudProviderDAO {
     };
     public static final String KEY = "name";
     public static final String TYPE = "type";
+    public static final String UUID = "uuid";
+    
+    
     //separates metricName from metricUnit in property name
 //    public static final String PROPERTY_SEPARATOR = ":";
 
@@ -53,7 +60,14 @@ public class CloudProviderDAO {
     }
 
     public static List<CloudProvider> searchForCloudProviders(CloudProvider resourceToSearchFor, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         List<CloudProvider> cloudProviders = new ArrayList<CloudProvider>();
         try {
 
@@ -66,14 +80,27 @@ public class CloudProviderDAO {
                     log.warn("Retrieved CloudProvider " + resourceToSearchFor + " has no " + KEY);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    cloudProvider.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + cloudProvider + " has no " + UUID);
+                }
+
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
                 cloudProvider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                 cloudProviders.add(cloudProvider);
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return cloudProviders;
@@ -82,7 +109,14 @@ public class CloudProviderDAO {
     public static List<CloudProvider> getAllCloudProviders(EmbeddedGraphDatabase database) {
 
         List<CloudProvider> cloudProviders = new ArrayList<CloudProvider>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.getAllNodes()) {
                 if (node.hasLabel(LABEL)) {
@@ -94,15 +128,28 @@ public class CloudProviderDAO {
                         log.warn("Retrieved CloudProvider " + node.getId() + " has no " + KEY);
                     }
 
+                    if (node.hasProperty(UUID)) {
+                        cloudProvider.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                    } else {
+                        log.warn("Retrieved CloudProvider " + cloudProvider + " has no " + UUID);
+                    }
+
                     //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
                     cloudProvider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                     cloudProviders.add(cloudProvider);
                 }
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return cloudProviders;
@@ -118,7 +165,14 @@ public class CloudProviderDAO {
     public static CloudProvider searchForCloudProvidersUniqueResult(CloudProvider resourceToSearchFor, EmbeddedGraphDatabase database) {
         CloudProvider cloudProviders = null;
 
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 CloudProvider provider = new CloudProvider();
@@ -145,6 +199,12 @@ public class CloudProviderDAO {
                     log.warn("Retrieved CloudProvider " + resourceToSearchFor + " has no " + TYPE);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    provider.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + provider + " has no " + UUID);
+                }
+
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
                 provider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                 cloudProviders = provider;
@@ -155,10 +215,17 @@ public class CloudProviderDAO {
 //        if (cloudProviders == null) {
 //            log.warn( "CloudProvider " + resourceToSearchFor + " was not found");
 //        }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return cloudProviders;
@@ -171,13 +238,27 @@ public class CloudProviderDAO {
      * @param database connection to DB
      */
     public static Node persistCloudProvider(CloudProvider resourceToPersist, EmbeddedGraphDatabase database) {
+        Node cloudProviderFound = searchForNodeByLabelAndKey(LABEL, KEY, resourceToPersist.getName(), database);
+
+        if (cloudProviderFound != null) {
+            return cloudProviderFound;
+        }
 
         Node costFunctionNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             costFunctionNode = database.createNode();
             costFunctionNode.setProperty(KEY, resourceToPersist.getName());
             costFunctionNode.setProperty(TYPE, resourceToPersist.getType());
+            costFunctionNode.setProperty(UUID, resourceToPersist.getUuid());
+
             costFunctionNode.addLabel(LABEL);
 
             //persist serviceUnit elements
@@ -196,12 +277,18 @@ public class CloudProviderDAO {
                 Relationship relationship = costFunctionNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.providesServiceUnit);
 
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
-
         return costFunctionNode;
 
     }
@@ -213,16 +300,26 @@ public class CloudProviderDAO {
      * @param database connection to DB
      */
     public static void persistCloudProviders(List<CloudProvider> resourcesToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (CloudProvider resourceToPersist : resourcesToPersist) {
-                Node costFunctionNode = null;
 
-                costFunctionNode = database.createNode();
-                costFunctionNode.setProperty(KEY, resourceToPersist.getName());
-                costFunctionNode.setProperty(TYPE, resourceToPersist.getType());
-                costFunctionNode.addLabel(LABEL);
+                Node cloudProviderNode = searchForNodeByLabelAndKey(LABEL, KEY, resourceToPersist.getName(), database);
 
+                if (cloudProviderNode == null) {
+                    cloudProviderNode = database.createNode();
+                    cloudProviderNode.setProperty(KEY, resourceToPersist.getName());
+                    cloudProviderNode.setProperty(TYPE, resourceToPersist.getType());
+                  cloudProviderNode.setProperty(UUID, resourceToPersist.getUuid().toString());
+                    cloudProviderNode.addLabel(LABEL);
+                }
                 //persist serviceUnit elements
                 for (ServiceUnit serviceUnit : resourceToPersist.getServiceUnits()) {
                     ServiceUnit costElementFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
@@ -230,9 +327,9 @@ public class CloudProviderDAO {
                     Node costElementNode = null;
                     if (costElementFound == null) {
                         costElementNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
-                        Relationship relationship = costFunctionNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.providesServiceUnit);
+                        Relationship relationship = cloudProviderNode.createRelationshipTo(costElementNode, ServiceUnitRelationship.providesServiceUnit);
                     } else {
-                    //retrieve the costFunction to have its ID
+                        //retrieve the costFunction to have its ID
                         //add relationship from CostElement to CloudProvider
                         costElementNode = database.getNodeById(costElementFound.getId());
                         //do not duplicate relationship for added service units. from cloud
@@ -242,10 +339,17 @@ public class CloudProviderDAO {
                 }
 
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
     }

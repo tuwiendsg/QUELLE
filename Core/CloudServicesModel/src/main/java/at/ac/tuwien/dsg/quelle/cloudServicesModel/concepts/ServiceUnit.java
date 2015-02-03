@@ -68,9 +68,9 @@ public class ServiceUnit extends Entity {
     }
 
     public ServiceUnit(String category, String subcategory, String name) {
+        super(name);
         this.category = category;
         this.subcategory = subcategory;
-        this.name = name;
     }
 
     public void setCostFunctions(List<CostFunction> costFunctions) {

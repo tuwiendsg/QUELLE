@@ -37,12 +37,12 @@ import org.apache.log4j.Logger;
 public class CostFunction extends Entity {
 
     //utility for which cost is applied
-//    private serviceUnit utility;
+    //private serviceUnit utility;
     //if we apply the "utility" together with the entities in this LIST, then the cost
     //is the one specified by this function
     //Is Entity to support ServiceUnit, or Resource and Quality options (you pay separately per I/O performance, etc)
     @XmlElement(name = "InConjunctionWith", required = false)
-//    @XmlTransient
+    //@XmlTransient
     //if more, means logical AND between them
     private List<Entity> appliedInConjunctionWith;
     @XmlElement(name = "CostElement", required = false)

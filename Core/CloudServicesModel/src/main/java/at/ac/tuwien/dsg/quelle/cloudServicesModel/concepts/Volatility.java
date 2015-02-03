@@ -38,6 +38,10 @@ public class Volatility extends Entity implements Cloneable {
     public Volatility() {
     }
 
+    public Volatility(String name) {
+        super(name);
+    }
+
     public Volatility(int minimumLifetimeInHours, double maxNrOfChanges) {
         this.minimumLifetimeInHours = minimumLifetimeInHours;
         this.maxNrOfChanges = maxNrOfChanges;

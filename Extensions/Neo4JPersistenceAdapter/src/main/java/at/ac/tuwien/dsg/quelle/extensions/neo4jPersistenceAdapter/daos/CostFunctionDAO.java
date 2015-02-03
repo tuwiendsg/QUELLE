@@ -33,6 +33,9 @@ import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.Co
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -54,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class CostFunctionDAO {
+public class CostFunctionDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(CostFunctionDAO.class);
 
@@ -67,9 +70,18 @@ public class CostFunctionDAO {
     //separates metricName from metricUnit in property name
     public static final String PROPERTY_SEPARATOR = ":";
 
+    public static final String UUID = "uuid";
+
     static List<ElasticityCapability.Dependency> getElasticityCapabilitiesTargetsCostFunctionNode(long nodeID, EmbeddedGraphDatabase database) {
         List<ElasticityCapability.Dependency> elTargets = new ArrayList<ElasticityCapability.Dependency>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -84,24 +96,30 @@ public class CostFunctionDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
 
-                if (!lastPathNode.hasLabel(LABEL)) {
+                if (!node.hasLabel(LABEL)) {
                     continue;
                 }
 
                 CostFunction costFunction = new CostFunction();
-                costFunction.setId(lastPathNode.getId());
+                costFunction.setId(node.getId());
 
-                if (lastPathNode.hasProperty(KEY)) {
-                    costFunction.setName(lastPathNode.getProperty(KEY).toString());
+                if (node.hasProperty(KEY)) {
+                    costFunction.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn("Retrieved CostFunction " + lastPathNode + " has no " + KEY);
+                    log.warn("Retrieved CostFunction " + node + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    costFunction.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costFunction + " has no " + UUID);
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(lastPathNode.getId(), database));
-                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(lastPathNode.getId(), database));
+                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
 
                 Relationship relationship = path.lastRelationship();
 
@@ -115,27 +133,33 @@ public class CostFunctionDAO {
                         String unit = relationship.getProperty(VOLATILITY_TIME_UNIT).toString();
                         volatility.setMinimumLifetimeInHours(Integer.parseInt(unit));
                     } else {
-                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     if (relationship.hasProperty(VOLATILITY_MAX_CHANGES)) {
                         String unit = relationship.getProperty(VOLATILITY_MAX_CHANGES).toString();
                         volatility.setMaxNrOfChanges(Double.parseDouble(unit));
                     } else {
-                        log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + VOLATILITY_TIME_UNIT);
+                        log.warn("Retrieved ElasticityCapability " + node + " has no " + VOLATILITY_TIME_UNIT);
                     }
 
                     dependency.setVolatility(volatility);
                 } else {
-                    log.warn("No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                    log.warn("No relationship found starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + node.getProperty(KEY).toString());
                     new Exception().printStackTrace();
                 }
 
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return elTargets;
     }
@@ -155,7 +179,14 @@ public class CostFunctionDAO {
     public static List<CostFunction> getCostFunctionOptionsForServiceUnitNode(Long serviceUnitNodeID, Long costFunctionNodeID, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node costFunctionNode = database.getNodeById(costFunctionNodeID);
             Node serviceUnitNode = database.getNodeById(serviceUnitNodeID);
@@ -176,10 +207,16 @@ public class CostFunctionDAO {
                 }
             }
 
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return costFunctions;
@@ -196,7 +233,14 @@ public class CostFunctionDAO {
     public static List<CostFunction> searchForCostFunctions(CostFunction resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 CostFunction costFunction = new CostFunction();
@@ -207,15 +251,27 @@ public class CostFunctionDAO {
                     log.warn("Retrieved CostFunction " + resourceToSearchFor + " has no " + KEY);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    costFunction.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costFunction + " has no " + UUID);
+                }
+
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
                 costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
                 costFunctions.add(costFunction);
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return costFunctions;
     }
@@ -229,7 +285,14 @@ public class CostFunctionDAO {
      */
     public static CostFunction searchForCostFunctionsUniqueResult(CostFunction resourceToSearchFor, EmbeddedGraphDatabase database) {
         CostFunction resourceFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 CostFunction costFunction = new CostFunction();
@@ -242,6 +305,12 @@ public class CostFunctionDAO {
                     }
                 } else {
                     log.warn("Retrieved CostFunction " + resourceToSearchFor + " has no name");
+                }
+
+                if (node.hasProperty(UUID)) {
+                    costFunction.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costFunction + " has no " + UUID);
                 }
 
                 if (node.hasProperty(KEY)) {
@@ -257,10 +326,16 @@ public class CostFunctionDAO {
 
                 break;
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 //        if (resourceFound == null) {
 //            log.warn( "CostFunction " + resourceToSearchFor + " was not found");
@@ -270,30 +345,49 @@ public class CostFunctionDAO {
 
     public static CostFunction getCostFunction(Long id, EmbeddedGraphDatabase database) {
 
-        Node costFunctionNode = database.getNodeById(id);
+        Node node = database.getNodeById(id);
         CostFunction costFunction = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
         try {
-            if (costFunctionNode == null) {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
+        try {
+            if (node == null) {
                 return new CostFunction();
             }
 
             costFunction = new CostFunction();
-            costFunction.setId(costFunctionNode.getId());
+            costFunction.setId(node.getId());
 
-            if (costFunctionNode.hasProperty(KEY)) {
-                costFunction.setName(costFunctionNode.getProperty(KEY).toString());
+            if (node.hasProperty(KEY)) {
+                costFunction.setName(node.getProperty(KEY).toString());
             } else {
-                log.warn("Retrieved CostFunction " + costFunctionNode + " has no " + KEY);
+                log.warn("Retrieved CostFunction " + node + " has no " + KEY);
+            }
+
+            if (node.hasProperty(UUID)) {
+                costFunction.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+            } else {
+                log.warn("Retrieved CloudProvider " + costFunction + " has no " + UUID);
             }
 
             //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
             costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(id, database));
             costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(id, database));
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return costFunction;
     }
@@ -311,7 +405,14 @@ public class CostFunctionDAO {
             return entities;
         }
 
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
 
             TraversalDescription description = Traversal.traversal()
@@ -363,10 +464,16 @@ public class CostFunctionDAO {
                     entities.add(quality);
                 }
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return entities;
@@ -376,7 +483,14 @@ public class CostFunctionDAO {
     public static List<CostFunction> getCostFunctionsForNode(Long id, EmbeddedGraphDatabase database) {
 
         List<CostFunction> costFunctions = new ArrayList<CostFunction>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
 
             Node parentNode = database.getNodeById(id);
@@ -393,21 +507,27 @@ public class CostFunctionDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
                 CostFunction costFunction = new CostFunction();
-                costFunction.setId(lastPathNode.getId());
+                costFunction.setId(node.getId());
 
-                if (lastPathNode.hasProperty(KEY)) {
-                    costFunction.setName(lastPathNode.getProperty(KEY).toString());
+                if (node.hasProperty(KEY)) {
+                    costFunction.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn("Retrieved CostFunction " + lastPathNode + " has no " + KEY);
+                    log.warn("Retrieved CostFunction " + node + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    costFunction.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costFunction + " has no " + UUID);
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(lastPathNode.getId(), database));
+                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 //need to also retrieve Resurce and Quality
 
-                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(lastPathNode.getId(), database));
+                costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
 
                 if (costFunction != null) {
                     //hack. if the costFunction has allready been added (equals is done on the DB Node),
@@ -419,10 +539,16 @@ public class CostFunctionDAO {
                     }
                 }
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return costFunctions;
@@ -437,11 +563,18 @@ public class CostFunctionDAO {
     public static Node persistCostFunction(CostFunction resourceToPersist, EmbeddedGraphDatabase database) {
 
         Node costFunctionNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             costFunctionNode = database.createNode();
             costFunctionNode.setProperty(KEY, resourceToPersist.getName());
-
+            costFunctionNode.setProperty(UUID, resourceToPersist.getUuid().toString());
             costFunctionNode.addLabel(LABEL);
 
             //persist Cost Elements
@@ -528,10 +661,14 @@ public class CostFunctionDAO {
                 }
 
             }
-            tx.finish();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
+
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return costFunctionNode;
@@ -545,7 +682,14 @@ public class CostFunctionDAO {
      * @param database connection to DB
      */
     public static void persistCostFunctions(List<CostFunction> resourcesToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (CostFunction resourceToPersist : resourcesToPersist) {
                 Node costFunctionNode = null;
@@ -553,6 +697,7 @@ public class CostFunctionDAO {
                 costFunctionNode = database.createNode();
                 costFunctionNode.setProperty(KEY, resourceToPersist.getName());
                 costFunctionNode.addLabel(LABEL);
+                costFunctionNode.setProperty(UUID, resourceToPersist.getUuid().toString());
 
                 //persist Cost Elements
                 for (CostElement costElement : resourceToPersist.getCostElements()) {
@@ -562,7 +707,7 @@ public class CostFunctionDAO {
                     if (costElementFound == null) {
                         costElementNode = CostElementDAO.persistCostElementEntity(costElement, database);
                     } else {
-                    //retrieve the costFunction to have its ID
+                        //retrieve the costFunction to have its ID
                         //add relationship from CostElement to CostFunction
                         costElementNode = database.getNodeById(costElementFound.getId());
                     }
@@ -591,7 +736,7 @@ public class CostFunctionDAO {
                         if (appliedInConjunctionWith == null) {
                             appliedInConjunctionWithNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
                         }
@@ -605,7 +750,7 @@ public class CostFunctionDAO {
                         if (appliedInConjunctionWith == null) {
                             appliedInConjunctionWithNode = ResourceDAO.persistResource(resource, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
                         }
@@ -623,7 +768,7 @@ public class CostFunctionDAO {
                         if (appliedInConjunctionWith == null) {
                             appliedInConjunctionWithNode = QualityDAO.persistQualityEntity(quality, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             appliedInConjunctionWithNode = database.getNodeById(appliedInConjunctionWith.getId());
                         }
@@ -638,10 +783,16 @@ public class CostFunctionDAO {
 
                 }
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
     }
 }

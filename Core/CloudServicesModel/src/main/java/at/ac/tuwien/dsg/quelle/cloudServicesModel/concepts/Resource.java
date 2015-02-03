@@ -71,14 +71,12 @@ public class Resource extends Entity implements Cloneable {
     public void setProperties(Map<Metric, MetricValue> properties) {
         this.properties = properties;
     }
-    
-    
 
     public Resource() {
     }
 
     public Resource(String name) {
-        this.name = name;
+        super(name);
     }
 
     public Map<Metric, MetricValue> getProperties() {

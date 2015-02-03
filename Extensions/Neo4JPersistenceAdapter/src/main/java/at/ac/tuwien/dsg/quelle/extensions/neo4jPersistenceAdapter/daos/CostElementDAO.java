@@ -20,9 +20,14 @@ import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.helper.Se
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
-import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO.log;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CostElementDAO.UUID;
+import static java.nio.channels.spi.SelectorProvider.provider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
+import static org.neo4j.cypher.internal.commands.Pattern$class.node;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -44,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class CostElementDAO {
+public class CostElementDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(CostElementDAO.class);
 
@@ -57,6 +62,7 @@ public class CostElementDAO {
     public static final String METRIC = "metric";
     public static final String TYPE = "type";
     public static final String PROPERTY_SEPARATOR = ":";
+    public static final String UUID = "uuid";
 
     private CostElementDAO() {
     }
@@ -71,7 +77,14 @@ public class CostElementDAO {
     public static List<CostElement> searchForCostElementEntities(CostElement resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<CostElement> costElements = new ArrayList<CostElement>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
 
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
@@ -87,6 +100,12 @@ public class CostElementDAO {
                     costElement.setType(node.getProperty(TYPE).toString());
                 } else {
                     log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    costElement.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
                 }
 
                 if (node.hasProperty(METRIC)) {
@@ -123,10 +142,16 @@ public class CostElementDAO {
                 costElements.add(costElement);
             }
 
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return costElements;
@@ -141,7 +166,14 @@ public class CostElementDAO {
      */
     public static CostElement searchForCostElementEntitiesUniqueResult(CostElement resourceToSearchFor, EmbeddedGraphDatabase database) {
         CostElement resourceFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
 
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
@@ -157,6 +189,12 @@ public class CostElementDAO {
                     }
                 } else {
                     log.warn("Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    costElement.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
                 }
 
                 if (node.hasProperty(TYPE)) {
@@ -200,10 +238,16 @@ public class CostElementDAO {
 
                 break;
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
 //        if (resourceFound == null) {
@@ -225,7 +269,14 @@ public class CostElementDAO {
 
         List<CostElement> costElements = new ArrayList<CostElement>();
 
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -256,6 +307,12 @@ public class CostElementDAO {
                     log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    costElement.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
+                }
+
                 if (node.hasProperty(METRIC)) {
                     String propertyKey = node.getProperty(METRIC).toString();
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
@@ -275,7 +332,27 @@ public class CostElementDAO {
 
                 if (relationship != null) {
                     for (String propertyKey : relationship.getPropertyKeys()) {
-                        MetricValue metricValue = new MetricValue(propertyKey);
+                        //assume property is interval, so must be numeric
+                        Object propertyKeyValue = propertyKey;
+
+                        if (propertyKey.matches("[0-9]*")) {
+                            try {
+                                propertyKeyValue = Integer.parseInt(propertyKey);
+                            } catch (NumberFormatException e) {
+                                try {
+                                    propertyKeyValue = Long.parseLong(propertyKey);
+                                } catch (NumberFormatException ex) {
+                                    //maybe long if not int
+                                }
+                            }
+                        } else if (propertyKey.matches("[0-9\\.]*")) {
+                            try {
+                                propertyKeyValue = Double.parseDouble(propertyKey);
+                            } catch (NumberFormatException exception) {
+                            }
+                        }
+
+                        MetricValue metricValue = new MetricValue(propertyKeyValue);
                         Double cost = (Double) relationship.getProperty(propertyKey);
                         costElement.addCostInterval(metricValue, cost);
                     }
@@ -302,10 +379,16 @@ public class CostElementDAO {
 //                }
                 costElements.add(costElement);
             }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return costElements;
@@ -314,7 +397,14 @@ public class CostElementDAO {
 
     public static CostElement getByID(Long id, EmbeddedGraphDatabase database) {
         CostElement resourceFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node node = database.getNodeById(id);
             if (node == null) {
@@ -334,6 +424,12 @@ public class CostElementDAO {
                 costElement.setType(node.getProperty(TYPE).toString());
             } else {
                 log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
+            }
+
+            if (node.hasProperty(UUID)) {
+                costElement.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+            } else {
+                log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
             }
 
             if (node.hasProperty(METRIC)) {
@@ -370,10 +466,16 @@ public class CostElementDAO {
 //            }
             resourceFound = costElement;
 
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return resourceFound;
@@ -388,12 +490,20 @@ public class CostElementDAO {
     public static Node persistCostElementEntity(CostElement entityToPersist, EmbeddedGraphDatabase database) {
 
         Node resourceNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             resourceNode = database.createNode();
             resourceNode.setProperty(KEY, entityToPersist.getName());
             resourceNode.setProperty(METRIC, entityToPersist.getCostMetric().getName() + PROPERTY_SEPARATOR + entityToPersist.getCostMetric().getMeasurementUnit());
             resourceNode.setProperty(TYPE, entityToPersist.getType());
+            resourceNode.setProperty(UUID, entityToPersist.getUuid().toString());
             resourceNode.addLabel(LABEL);
 
 //            for (Map.Entry<MetricValue, Double> entry : entityToPersist.getCostIntervalFunction().entrySet()) {
@@ -401,10 +511,16 @@ public class CostElementDAO {
 //                String propertyKey = metricValue.getValueRepresentation();
 //                resourceNode.setProperty(propertyKey, entry.getValue());
 //            }
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return resourceNode;
@@ -417,13 +533,21 @@ public class CostElementDAO {
      * @param database connection to DB
      */
     public static void persistCostElementEntities(List<CostElement> resourcesToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (CostElement entityToPersist : resourcesToPersist) {
                 Node resourceNode = database.createNode();
                 resourceNode.setProperty(KEY, entityToPersist.getName());
                 resourceNode.setProperty(METRIC, entityToPersist.getCostMetric().getName() + PROPERTY_SEPARATOR + entityToPersist.getCostMetric().getMeasurementUnit());
                 resourceNode.setProperty(TYPE, entityToPersist.getType());
+                resourceNode.setProperty(UUID, entityToPersist.getUuid().toString());
                 resourceNode.addLabel(LABEL);
 //
 //                for (Map.Entry<MetricValue, Double> entry : entityToPersist.getCostIntervalFunction().entrySet()) {
@@ -433,10 +557,16 @@ public class CostElementDAO {
 //                }
             }
 
-            tx.finish();
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
     }
 }

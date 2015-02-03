@@ -30,6 +30,9 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -51,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class ElasticityCapabilityDAO {
+public class ElasticityCapabilityDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(ElasticityCapabilityDAO.class);
 
@@ -67,17 +70,25 @@ public class ElasticityCapabilityDAO {
     public static final String VOLATILITY_MAX_CHANGES = "maxNrOfChanges";
 
     public static final String PROPERTY_SEPARATOR = ":";
-//    public static final String ELASTICITY_CHARACTERISTIC_VALUES_SEPARATOR = ",";
 
+    public static final String UUID = "uuid";
+
+//    public static final String ELASTICITY_CHARACTERISTIC_VALUES_SEPARATOR = ",";
     private ElasticityCapabilityDAO() {
     }
 
     public static List<ElasticityCapability> getELasticityCapabilitiesForNode(Long id, EmbeddedGraphDatabase database) {
         List<ElasticityCapability> elasticityCapabilities = new ArrayList<ElasticityCapability>();
 
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
         try {
-            tx.finish();
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
+        try {
 
             Node parentNode = database.getNodeById(id);
 
@@ -92,33 +103,33 @@ public class ElasticityCapabilityDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
 
                 List<Dependency> elasticityCapabilityTargets = null;
                 //TODO: this might be an issue if I want diff target types per same elasticity capability
                 //search target in Resources
                 {
-                    List<Dependency> result = ResourceDAO.getElasticityCapabilityTargetResourcesForNode(lastPathNode.getId(), database);
+                    List<Dependency> result = ResourceDAO.getElasticityCapabilityTargetResourcesForNode(node.getId(), database);
                     if (!result.isEmpty()) {
                         elasticityCapabilityTargets = new ArrayList<Dependency>(result);
                     }
                 }
                 if (elasticityCapabilityTargets == null) {
-                    List<Dependency> result = QualityDAO.getElasticityCapabilityTargetsQualityForNode(lastPathNode.getId(), database);
-                    if (!result.isEmpty()) {
-                        elasticityCapabilityTargets = new ArrayList<Dependency>(result);
-                    }
-                }
-
-                if (elasticityCapabilityTargets == null) {
-                    List<Dependency> result = ServiceUnitDAO.getElasticityCapabilitiesTargetServiceUnitForNode(lastPathNode.getId(), database);
+                    List<Dependency> result = QualityDAO.getElasticityCapabilityTargetsQualityForNode(node.getId(), database);
                     if (!result.isEmpty()) {
                         elasticityCapabilityTargets = new ArrayList<Dependency>(result);
                     }
                 }
 
                 if (elasticityCapabilityTargets == null) {
-                    List<Dependency> result = CostFunctionDAO.getElasticityCapabilitiesTargetsCostFunctionNode(lastPathNode.getId(), database);
+                    List<Dependency> result = ServiceUnitDAO.getElasticityCapabilitiesTargetServiceUnitForNode(node.getId(), database);
+                    if (!result.isEmpty()) {
+                        elasticityCapabilityTargets = new ArrayList<Dependency>(result);
+                    }
+                }
+
+                if (elasticityCapabilityTargets == null) {
+                    List<Dependency> result = CostFunctionDAO.getElasticityCapabilitiesTargetsCostFunctionNode(node.getId(), database);
                     if (!result.isEmpty()) {
                         elasticityCapabilityTargets = new ArrayList<Dependency>(result);
                     }
@@ -126,19 +137,25 @@ public class ElasticityCapabilityDAO {
 
                 //if still null, something bad happend
                 if (elasticityCapabilityTargets == null) {
-                    log.warn("ElasticityCapability for " + lastPathNode.getProperty(KEY).toString() + " does not have target");
+                    log.warn("ElasticityCapability for " + node.getProperty(KEY).toString() + " does not have target");
                     return elasticityCapabilities;
                 }
 
                 ElasticityCapability capability = new ElasticityCapability();
                 capability.setCapabilityDependencies(elasticityCapabilityTargets);
-                capability.setId(lastPathNode.getId());
+                capability.setId(node.getId());
 
-                if (lastPathNode.hasProperty(KEY)) {
-                    String name = lastPathNode.getProperty(KEY).toString();
+                if (node.hasProperty(KEY)) {
+                    String name = node.getProperty(KEY).toString();
                     capability.setName(name);
                 } else {
-                    log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + KEY);
+                    log.warn("Retrieved ElasticityCapability " + node + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    capability.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + capability + " has no " + UUID);
                 }
 
                 //get type and phase from relationship
@@ -154,7 +171,7 @@ public class ElasticityCapabilityDAO {
                     String type = relationship.getProperty(PHASE).toString();
                     capability.setPhase(type);
                 } else {
-                    log.warn("Retrieved ElasticityCapability " + lastPathNode + " has no " + PHASE);
+                    log.warn("Retrieved ElasticityCapability " + node + " has no " + PHASE);
                 }
 
 //                if (relationship != null) {
@@ -172,13 +189,18 @@ public class ElasticityCapabilityDAO {
 //        else {
 //                    log.warn( "No relationship found of type " + UtilityRelationship.HAS_RESOURCE + " starting from " + parentNode + " and ending at " + lastPathNode);
 //    }
-                if (capability != null) {
-                    elasticityCapabilities.add(capability);
-                }
+                elasticityCapabilities.add(capability);
+            }
+            if (!transactionAllreadyRunning) {
+                tx.success();
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return elasticityCapabilities;
     }
@@ -191,8 +213,15 @@ public class ElasticityCapabilityDAO {
      * @return
      */
     public static ElasticityCapability searchForElasticityCapabilitiesUniqueResult(ElasticityCapability resourceToSearchFor, EmbeddedGraphDatabase database) {
-        ElasticityCapability elasticityCapability = null;
-        Transaction tx = database.beginTx();
+        ElasticityCapability capability = null;
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
 
@@ -226,15 +255,21 @@ public class ElasticityCapabilityDAO {
                     }
                 }
 
-                elasticityCapability = new ElasticityCapability();
-                elasticityCapability.setCapabilityDependencies(elasticityCapabilityTargets);
-                elasticityCapability.setId(node.getId());
+                capability = new ElasticityCapability();
+                capability.setCapabilityDependencies(elasticityCapabilityTargets);
+                capability.setId(node.getId());
 
                 if (node.hasProperty(KEY)) {
                     String name = node.getProperty(KEY).toString();
-                    elasticityCapability.setName(name);
+                    capability.setName(name);
                 } else {
                     log.warn("Retrieved ElasticityCapability " + resourceToSearchFor + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    capability.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + capability + " has no " + UUID);
                 }
 
 //            if (node.hasProperty(TYPE)) {
@@ -250,7 +285,7 @@ public class ElasticityCapabilityDAO {
 //            } else {
 //                log.warn( "Retrieved CloudProvider " + resourceToSearchFor + " has no " + PHASE);
 //            }
-                if (!resourceToSearchFor.equals(elasticityCapability)) {
+                if (!resourceToSearchFor.equals(capability)) {
                     continue;
                 }
 
@@ -271,15 +306,22 @@ public class ElasticityCapabilityDAO {
 //            }
                 break;
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
 //        if (elasticityCapability == null) {
 //            log.warn( "ElasticityCapability " + resourceToSearchFor + " was not found");
 //        }
-        return elasticityCapability;
+        return capability;
     }
 
     /**
@@ -291,10 +333,18 @@ public class ElasticityCapabilityDAO {
     public static Node persistElasticityCapability(ElasticityCapability resourceToPersist, EmbeddedGraphDatabase database) {
 
         Node elCharactNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             elCharactNode = database.createNode();
             elCharactNode.setProperty(KEY, resourceToPersist.getName());
+            elCharactNode.setProperty(UUID, resourceToPersist.getUuid().toString());
 
             elCharactNode.addLabel(LABEL);
             List<Dependency> dependencys = resourceToPersist.getCapabilityDependencies();
@@ -398,9 +448,16 @@ public class ElasticityCapabilityDAO {
                     log.warn("Elasticity capability target entity " + capabilityTarget.getName() + " not instanceof Resource or Quality");
                 }
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return elCharactNode;
@@ -414,7 +471,14 @@ public class ElasticityCapabilityDAO {
      * @param database connection to DB
      */
     public static void persistElasticityCapabilities(List<ElasticityCapability> resourcesToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (ElasticityCapability resourceToPersist : resourcesToPersist) {
                 Node elCharactNode = null;
@@ -423,6 +487,7 @@ public class ElasticityCapabilityDAO {
                 elCharactNode.setProperty(KEY, resourceToPersist.getName());
 //            elCharactNode.setProperty(TYPE, resourceToPersist.getType());
 //            elCharactNode.setProperty(PHASE, resourceToPersist.getPhase());
+                elCharactNode.setProperty(UUID, resourceToPersist.getUuid().toString());
                 elCharactNode.addLabel(LABEL);
 
                 List<Dependency> dependencys = resourceToPersist.getCapabilityDependencies();
@@ -430,7 +495,7 @@ public class ElasticityCapabilityDAO {
                 for (Dependency dependency : dependencys) {
 
                     Entity capabilityTarget = dependency.getTarget();
-                //persist target. 
+                    //persist target. 
                     //the ElasticityCapability values are persisted per individual CloudServiceUnit relationship HAS_ELASTICITY_CHARACTERISTIC
                     if (capabilityTarget instanceof Resource) {
                         Resource resourceCapabilityTarget = (Resource) capabilityTarget;
@@ -440,7 +505,7 @@ public class ElasticityCapabilityDAO {
                         if (targetFound == null) {
                             costElementNode = ResourceDAO.persistResource(resourceCapabilityTarget, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             costElementNode = database.getNodeById(targetFound.getId());
                         }
@@ -460,7 +525,7 @@ public class ElasticityCapabilityDAO {
                         if (targetFound == null) {
                             costElementNode = QualityDAO.persistQualityEntity(qualityCapabilityTarget, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             costElementNode = database.getNodeById(targetFound.getId());
                         }
@@ -479,7 +544,7 @@ public class ElasticityCapabilityDAO {
                         if (targetFound == null) {
                             costElementNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             costElementNode = database.getNodeById(targetFound.getId());
                         }
@@ -499,7 +564,7 @@ public class ElasticityCapabilityDAO {
                         if (targetFound == null) {
                             costElementNode = CostFunctionDAO.persistCostFunction(costFunction, database);
                         } else {
-                        //retrieve the costFunction to have its ID
+                            //retrieve the costFunction to have its ID
                             //add relationship from CostElement to CloudProvider
                             costElementNode = database.getNodeById(targetFound.getId());
                         }
@@ -515,9 +580,16 @@ public class ElasticityCapabilityDAO {
                     }
                 }
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
     }

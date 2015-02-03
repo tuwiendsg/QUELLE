@@ -17,6 +17,7 @@
 package at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts;
 
 import java.io.Serializable;
+import java.util.UUID;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -32,9 +33,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "Entity")
 public class Entity implements Serializable {
 
-    @XmlAttribute(name = "id", required = false)
+    //used for neo4J storage
+    @XmlAttribute(name = "id")
     protected Long id;
-    @XmlAttribute(name = "name", required = true)
+
+    @XmlAttribute(name = "uuid", required = false)
+    protected UUID uuid;
+
+    @XmlAttribute(name = "name")
     protected String name;
 
     public final Long getId() {
@@ -54,13 +60,33 @@ public class Entity implements Serializable {
 
     public Entity(String name) {
         this.name = name;
+        this.uuid = UUID.randomUUID();
+    }
+
+    public Entity(UUID uuid, String name) {
+        this.uuid = uuid;
+        this.name = name;
+    }
+
+    public Entity(Long id, UUID uuid, String name) {
+        this.id = id;
+        this.uuid = uuid;
+        this.name = name;
     }
 
     public Entity(Long id, String name) {
         this.id = id;
         this.name = name;
+        this.uuid = UUID.randomUUID();
     }
-    
+
+    public final UUID getUuid() {
+        return uuid;
+    }
+
+    public final void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
 
     public final String getName() {
         return name;
@@ -94,5 +120,20 @@ public class Entity implements Serializable {
             return false;
         }
         return true;
+    }
+
+    public final Entity withId(final Long id) {
+        this.id = id;
+        return this;
+    }
+
+    public final Entity withUuid(final UUID uuid) {
+        this.uuid = uuid;
+        return this;
+    }
+
+    public final Entity withName(final String name) {
+        this.name = name;
+        return this;
     }
 }

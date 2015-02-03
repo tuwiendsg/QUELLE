@@ -28,9 +28,14 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ResourceDAO.log;
+import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ServiceUnitDAO.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -55,7 +60,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class ServiceUnitDAO {
+public class ServiceUnitDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(ServiceUnitDAO.class);
 
@@ -70,6 +75,7 @@ public class ServiceUnitDAO {
     public static final String ELASTICITY_CHARACTERISTIC_VALUES = "values";
     //separates metricName from metricUnit in property name
     public static final String PROPERTY_SEPARATOR = ":";
+    public static final String UUID = "uuid";
 
     /**
      * Used by ElasticityCapabilityDAO to get the service unit targeted by an
@@ -88,7 +94,15 @@ public class ServiceUnitDAO {
         if (parentNode == null) {
             return elTargets;
         }
-        Transaction tx = database.beginTx();
+
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             TraversalDescription description = Traversal.traversal()
                     .evaluator(Evaluators.excludeStartPosition())
@@ -126,6 +140,12 @@ public class ServiceUnitDAO {
                     serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
                 } else {
                     log.warn("Retrieved serviceUnit " + node + " has no " + SUBCATEGORY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
                 }
 
                 //If this happened because you are updating something, disregard this addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
@@ -167,9 +187,18 @@ public class ServiceUnitDAO {
                 }
 
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return elTargets;
@@ -189,7 +218,14 @@ public class ServiceUnitDAO {
 
         ServiceUnit elTarget = null;
         int incomingPaths = 0;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(id);
 
@@ -208,9 +244,19 @@ public class ServiceUnitDAO {
             for (Path path : traverser) {
                 incomingPaths++;
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return incomingPaths;
     }
@@ -228,7 +274,14 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> searchForCloudServiceUnits(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             ResourceIterable<Node> nodes = database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName());
 
@@ -254,6 +307,12 @@ public class ServiceUnitDAO {
                     log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
+                }
+
                 //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
                 //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
                 serviceUnits.add(serviceUnit);
@@ -267,9 +326,19 @@ public class ServiceUnitDAO {
                 serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(serviceUnit.getId(), database));
                 //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return serviceUnits;
     }
@@ -284,7 +353,14 @@ public class ServiceUnitDAO {
     public static ServiceUnit searchForCloudServiceUnitsUniqueResult(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
         ServiceUnit serviceUnitFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, serviceUnitToSearchFor.getName())) {
 //                ServiceUnit resource = new ServiceUnit();
@@ -319,6 +395,12 @@ public class ServiceUnitDAO {
                     log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no " + SUBCATEGORY);
                 }
 
+                if (node.hasProperty(UUID)) {
+                    serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
+                }
+
                 //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(node.getId(), database));
                 //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(node.getId(), database));
                 serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
@@ -330,9 +412,19 @@ public class ServiceUnitDAO {
 
                 break;
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
 //        if (serviceUnitFound == null) {
@@ -344,7 +436,14 @@ public class ServiceUnitDAO {
     public static ServiceUnit getByID(Long nodeID, EmbeddedGraphDatabase database) {
 
         ServiceUnit serviceUnit = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -383,6 +482,11 @@ public class ServiceUnitDAO {
                 } else {
                     log.warn("Retrieved serviceUnit " + nodeID + " has no " + SUBCATEGORY);
                 }
+                if (node.hasProperty(UUID)) {
+                    serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
+                }
 
                 serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(node.getId(), database));
                 serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(node.getId(), database));
@@ -391,9 +495,19 @@ public class ServiceUnitDAO {
                 //serviceUnit.setElasticityQuantification(getElasticityDependency(node.getId(), database));
 
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return serviceUnit;
@@ -402,7 +516,14 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> getCloudServiceUnitsForCloudProviderNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = null;
 
@@ -423,31 +544,36 @@ public class ServiceUnitDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
                 ServiceUnit serviceUnit = new ServiceUnit();
-                serviceUnit.setId(lastPathNode.getId());
+                serviceUnit.setId(node.getId());
 
-                if (lastPathNode.hasProperty(KEY)) {
-                    serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
+                if (node.hasProperty(KEY)) {
+                    serviceUnit.setName(node.getProperty(KEY).toString());
                 } else {
-                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
+                    log.warn("Retrieved serviceUnit " + node + " has no " + KEY);
                 }
 
-                if (lastPathNode.hasProperty(CATEGORY)) {
-                    serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
+                if (node.hasProperty(CATEGORY)) {
+                    serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
                 } else {
-                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
+                    log.warn("Retrieved serviceUnit " + node + " has no " + CATEGORY);
                 }
 
-                if (lastPathNode.hasProperty(SUBCATEGORY)) {
-                    serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
+                if (node.hasProperty(SUBCATEGORY)) {
+                    serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
                 } else {
-                    log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
+                    log.warn("Retrieved serviceUnit " + node + " has no " + SUBCATEGORY);
+                }
+                if (node.hasProperty(UUID)) {
+                    serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
                 }
 
                 //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
                 //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
-                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
+                serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
                 serviceUnits.add(serviceUnit);
 
             }
@@ -458,9 +584,19 @@ public class ServiceUnitDAO {
                 serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
                 //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return serviceUnits;
 
@@ -477,7 +613,14 @@ public class ServiceUnitDAO {
     public static List<ServiceUnit> getConnectedComponentsByElasticityCapabilitiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = null;
 
@@ -501,7 +644,7 @@ public class ServiceUnitDAO {
             for (Path path_1 : traverser) {
 
                 //this node is ElasticityCapability, so from it we need to navigate using the hasElasticityCapability relationship
-                Node lastPathNode = path_1.endNode();
+                Node node = path_1.endNode();
 
                 TraversalDescription elCapabiliyTraversal = Traversal.traversal()
                         .evaluator(Evaluators.excludeStartPosition())
@@ -513,33 +656,38 @@ public class ServiceUnitDAO {
                     //if not service unit, continue
                     //extract only service units as associated. the Quality, Resource and Cost are
                     //configuration options
-                    if (!lastPathNode.hasLabel(LABEL)) {
+                    if (!node.hasLabel(LABEL)) {
                         continue;
                     }
                     ServiceUnit serviceUnit = new ServiceUnit();
-                    serviceUnit.setId(lastPathNode.getId());
+                    serviceUnit.setId(node.getId());
 
-                    if (lastPathNode.hasProperty(KEY)) {
-                        serviceUnit.setName(lastPathNode.getProperty(KEY).toString());
+                    if (node.hasProperty(KEY)) {
+                        serviceUnit.setName(node.getProperty(KEY).toString());
                     } else {
-                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + KEY);
+                        log.warn("Retrieved serviceUnit " + node + " has no " + KEY);
                     }
 
-                    if (lastPathNode.hasProperty(CATEGORY)) {
-                        serviceUnit.setCategory(lastPathNode.getProperty(CATEGORY).toString());
+                    if (node.hasProperty(CATEGORY)) {
+                        serviceUnit.setCategory(node.getProperty(CATEGORY).toString());
                     } else {
-                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + CATEGORY);
+                        log.warn("Retrieved serviceUnit " + node + " has no " + CATEGORY);
                     }
 
-                    if (lastPathNode.hasProperty(SUBCATEGORY)) {
-                        serviceUnit.setSubcategory(lastPathNode.getProperty(SUBCATEGORY).toString());
+                    if (node.hasProperty(SUBCATEGORY)) {
+                        serviceUnit.setSubcategory(node.getProperty(SUBCATEGORY).toString());
                     } else {
-                        log.warn("Retrieved serviceUnit " + lastPathNode + " has no " + SUBCATEGORY);
+                        log.warn("Retrieved serviceUnit " + node + " has no " + SUBCATEGORY);
+                    }
+                    if (node.hasProperty(UUID)) {
+                        serviceUnit.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                    } else {
+                        log.warn("Retrieved CloudProvider " + serviceUnit + " has no " + UUID);
                     }
 
                     //If this happened because you are updating something, disregard this e-mail..addAll(serviceUnitDAO.getMandatoryAssociations(lastPathNode.getId(), database));
                     //serviceUnit.getOptionalAssociations().addAll(serviceUnitDAO.getOptionalAssociations(lastPathNode.getId(), database));
-                    serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(lastPathNode.getId(), database));
+                    serviceUnit.getElasticityCapabilities().addAll(ElasticityCapabilityDAO.getELasticityCapabilitiesForNode(node.getId(), database));
                     serviceUnits.add(serviceUnit);
                 }
             }
@@ -550,9 +698,19 @@ public class ServiceUnitDAO {
                 serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
                 //serviceUnit.setElasticityQuantification(getElasticityDependency(serviceUnit.getId(), database));
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return serviceUnits;
 
@@ -567,12 +725,20 @@ public class ServiceUnitDAO {
     public static Node persistServiceUnit(ServiceUnit serviceUnitToPersist, EmbeddedGraphDatabase database) {
 
         Node serviceUnitNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             serviceUnitNode = database.createNode();
             serviceUnitNode.setProperty(KEY, serviceUnitToPersist.getName());
             serviceUnitNode.setProperty(CATEGORY, serviceUnitToPersist.getCategory());
             serviceUnitNode.setProperty(SUBCATEGORY, serviceUnitToPersist.getSubcategory());
+            serviceUnitNode.setProperty(UUID, serviceUnitToPersist.getUuid().toString());
             serviceUnitNode.addLabel(LABEL);
 
             //persist Resources
@@ -679,15 +845,32 @@ public class ServiceUnitDAO {
 //                relationship.setProperty(VOLATILITY_MAX_CHANGES, v.getMaxNrOfChanges());
 //            }
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
         return serviceUnitNode;
     }
 
     public static void persistCloudServiceUnits(List<ServiceUnit> cloudServiceUnitsToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (ServiceUnit serviceUnitToPersist : cloudServiceUnitsToPersist) {
                 Node serviceUnitNode = null;
@@ -696,6 +879,7 @@ public class ServiceUnitDAO {
                 serviceUnitNode.setProperty(KEY, serviceUnitToPersist.getName());
                 serviceUnitNode.setProperty(CATEGORY, serviceUnitToPersist.getCategory());
                 serviceUnitNode.setProperty(SUBCATEGORY, serviceUnitToPersist.getSubcategory());
+                serviceUnitNode.setProperty(UUID, serviceUnitToPersist.getUuid().toString());
                 serviceUnitNode.addLabel(LABEL);
 
                 //persist Resources
@@ -710,7 +894,7 @@ public class ServiceUnitDAO {
                         relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasResource);
                     } else {
                         persistedElement = database.getNodeById(resourceFound.getId());
-                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
+                        //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
                         //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
 //                    boolean relExists = false;
 //                    for (Relationship r : persistedElement.getRelationships(ServiceUnitRelationship.hasResource)) {
@@ -744,7 +928,7 @@ public class ServiceUnitDAO {
                         relationship = serviceUnitNode.createRelationshipTo(persistedElement, ServiceUnitRelationship.hasQuality);
                     } else {
                         persistedElement = database.getNodeById(qualityFound.getId());
-                    //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
+                        //CHECK IF THERE IS ALLREADY A RELATIONSHIP BETWEEN THEN, AND IF NOT, ADD ONE
                         //WHY WAS THIS HERE? THE CODE SEEMS TO ONLY ADD PROBLEMS
                         //WAS REMOVED because when you have multiple possible qualities
 //                    boolean relExists = false;
@@ -805,9 +989,18 @@ public class ServiceUnitDAO {
                 }
 
             }
+            if (!transactionAllreadyRunning) {
+                if (!transactionAllreadyRunning) {
+                    tx.success();
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
     }
 }

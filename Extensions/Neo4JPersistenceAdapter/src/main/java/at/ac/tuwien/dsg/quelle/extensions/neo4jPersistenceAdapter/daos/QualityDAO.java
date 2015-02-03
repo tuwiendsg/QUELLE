@@ -26,6 +26,9 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -47,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * @E-mail: d.moldovan@dsg.tuwien.ac.at
  *
  */
-public class QualityDAO {
+public class QualityDAO extends Neo4JDAO {
 
     static final Logger log = LoggerFactory.getLogger(QualityDAO.class);
 
@@ -59,6 +62,10 @@ public class QualityDAO {
     public static final String KEY = "name";
 //    public static final String TYPE = "type";
     public static final String PROPERTY_SEPARATOR = ":";
+
+    public static final String UUID = "uuid";
+
+                   
 
     private QualityDAO() {
     }
@@ -135,7 +142,14 @@ public class QualityDAO {
     public static List<Quality> searchForQualityEntities(Quality resourceToSearchFor, EmbeddedGraphDatabase database) {
 
         List<Quality> resources = new ArrayList<Quality>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 Quality quality = new Quality();
@@ -144,6 +158,12 @@ public class QualityDAO {
                     quality.setName(node.getProperty(KEY).toString());
                 } else {
                     log.warn("Retrieved Quality " + resourceToSearchFor + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    quality.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + quality + " has no " + UUID);
                 }
 
 //                if (node.hasProperty(TYPE)) {
@@ -171,9 +191,16 @@ public class QualityDAO {
 
                 resources.add(quality);
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return resources;
@@ -188,7 +215,14 @@ public class QualityDAO {
      */
     public static Quality searchForQualityEntitiesUniqueResult(Quality resourceToSearchFor, EmbeddedGraphDatabase database) {
         Quality resourceFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Node node : database.findNodesByLabelAndProperty(LABEL, KEY, resourceToSearchFor.getName())) {
                 Quality quality = new Quality();
@@ -203,6 +237,12 @@ public class QualityDAO {
                     }
                 } else {
                     log.warn("Retrieved Resource " + resourceToSearchFor + " has no " + KEY);
+                }
+
+                if (node.hasProperty(UUID)) {
+                    quality.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + quality + " has no " + UUID);
                 }
 
 //                if (node.hasProperty(TYPE)) {
@@ -231,9 +271,16 @@ public class QualityDAO {
 
                 break;
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
 //        if (resourceFound == null) {
@@ -256,7 +303,14 @@ public class QualityDAO {
     public static List<Quality> getQualityPropertiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
 
         List<Quality> qualities = new ArrayList<Quality>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(nodeID);
 
@@ -271,17 +325,17 @@ public class QualityDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
                 Quality quality = new Quality();
-                quality.setId(lastPathNode.getId());
+                quality.setId(node.getId());
 
                 //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
                 //and the property value is the metric value
-                for (String propertyKey : lastPathNode.getPropertyKeys()) {
+                for (String propertyKey : node.getPropertyKeys()) {
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                     //skip the key property
                     if (propertyKey.equals(KEY)) {
-                        quality.setName(lastPathNode.getProperty(KEY).toString());
+                        quality.setName(node.getProperty(KEY).toString());
 //                    } else if (propertyKey.equals(TYPE)) {
 //                        quality.setName(lastPathNode.getProperty(KEY).toString());
                     } else {
@@ -293,6 +347,13 @@ public class QualityDAO {
 //                            quality.addProperty(metric, metricValue);
 //                        }
                     }
+
+                }
+
+                if (node.hasProperty(UUID)) {
+                    quality.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + quality + " has no " + UUID);
                 }
 
                 //get properties from the RELATIONSHIP
@@ -301,7 +362,7 @@ public class QualityDAO {
                 Relationship relationship = null;
 
                 for (Relationship r : parentNode.getRelationships(ServiceUnitRelationship.hasQuality, Direction.OUTGOING)) {
-                    if (r.getEndNode().equals(lastPathNode)) {
+                    if (r.getEndNode().equals(node)) {
                         relationship = r;
                     }
                 }
@@ -319,7 +380,7 @@ public class QualityDAO {
 
                     }
                 } else {
-                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + node.getProperty(KEY).toString());
                 }
 
                 //if we have reached this place, then we have found return the quality and can return it
@@ -333,9 +394,16 @@ public class QualityDAO {
                     }
                 }
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return qualities;
@@ -345,7 +413,14 @@ public class QualityDAO {
     public static List<ElasticityCapability.Dependency> getElasticityCapabilityTargetsQualityForNode(Long elasticityCapabilityNodeID, EmbeddedGraphDatabase database) {
 
         List<ElasticityCapability.Dependency> elTargets = new ArrayList<ElasticityCapability.Dependency>();
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node parentNode = database.getNodeById(elasticityCapabilityNodeID);
 
@@ -360,22 +435,22 @@ public class QualityDAO {
             Traverser traverser = description.traverse(parentNode);
             for (Path path : traverser) {
 
-                Node lastPathNode = path.endNode();
+                Node node = path.endNode();
 
-                if (!lastPathNode.hasLabel(LABEL)) {
+                if (!node.hasLabel(LABEL)) {
                     continue;
                 }
 
                 Quality quality = new Quality();
-                quality.setId(lastPathNode.getId());
+                quality.setId(node.getId());
 
                 //the format assumed for each property of a Quality is "property key =" metricName : metricValue " (separated by :), 
                 //and the property value is the metric value
-                for (String propertyKey : lastPathNode.getPropertyKeys()) {
+                for (String propertyKey : node.getPropertyKeys()) {
                     String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
                     //skip the key property
                     if (propertyKey.equals(KEY)) {
-                        quality.setName(lastPathNode.getProperty(KEY).toString());
+                        quality.setName(node.getProperty(KEY).toString());
 //                    } else if (propertyKey.equals(TYPE)) {
 //                        quality.setName(lastPathNode.getProperty(KEY).toString());
                     } else {
@@ -387,6 +462,12 @@ public class QualityDAO {
 //                            quality.addProperty(metric, metricValue);
 //                        }
                     }
+                }
+
+                if (node.hasProperty(UUID)) {
+                    quality.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+                } else {
+                    log.warn("Retrieved CloudProvider " + quality + " has no " + UUID);
                 }
 
 //                //get properties from the RELATIONSHIP
@@ -430,14 +511,21 @@ public class QualityDAO {
                     dependency.setVolatility(volatility);
 
                 } else {
-                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + lastPathNode.getProperty(KEY).toString());
+                    log.warn("No relationship found of type " + ServiceUnitRelationship.hasQuality + " starting from " + parentNode.getProperty(KEY).toString() + " and ending at " + node.getProperty(KEY).toString());
                     new Exception().printStackTrace();
                 }
 
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
         return elTargets;
@@ -446,7 +534,14 @@ public class QualityDAO {
 
     public static Quality getByID(Long id, EmbeddedGraphDatabase database) {
         Quality resourceFound = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             Node node = database.getNodeById(id);
             if (node == null) {
@@ -475,12 +570,26 @@ public class QualityDAO {
 //                    }
                 }
             }
+            if (node.hasProperty(UUID)) {
+                quality.setUuid(java.util.UUID.fromString(node.getProperty(UUID).toString()));
+            } else {
+                log.warn("Retrieved CloudProvider " + quality + " has no " + UUID);
+            }
+
             //if we have reached this place, then we have found return the quality and can return it
             resourceFound = quality;
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
+
         return resourceFound;
     }
 
@@ -493,10 +602,18 @@ public class QualityDAO {
     public static Node persistQualityEntity(Quality resourceToPersist, EmbeddedGraphDatabase database) {
 
         Node resourceNode = null;
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             resourceNode = database.createNode();
             resourceNode.setProperty(KEY, resourceToPersist.getName());
+            resourceNode.setProperty (UUID, resourceToPersist.getUuid().toString());
             resourceNode.addLabel(LABEL);
 
 //            for (Map.Entry<Metric, MetricValue> entry : resourceToPersist.getProperties().entrySet()) {
@@ -504,10 +621,18 @@ public class QualityDAO {
 //                String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
 //                resourceNode.setProperty(propertyKey, entry.getValue().getValue());
 //            }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
+
         return resourceNode;
     }
 
@@ -518,11 +643,19 @@ public class QualityDAO {
      * @param database connection to DB
      */
     public static void persistQualityEntities(List<Quality> resourcesToPersist, EmbeddedGraphDatabase database) {
-        Transaction tx = database.beginTx();
+        boolean transactionAllreadyRunning = false;
+        try {
+            transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
+        } catch (SystemException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
+
         try {
             for (Quality resourceToPersist : resourcesToPersist) {
                 Node resourceNode = database.createNode();
                 resourceNode.setProperty(KEY, resourceToPersist.getName());
+                resourceNode.setProperty (UUID, resourceToPersist.getUuid().toString());
                 resourceNode.addLabel(LABEL);
 
 //                for (Map.Entry<Metric, MetricValue> entry : resourceToPersist.getProperties().entrySet()) {
@@ -531,9 +664,16 @@ public class QualityDAO {
 //                    resourceNode.setProperty(propertyKey, entry.getValue().getValue());
 //                }
             }
+            if (!transactionAllreadyRunning) {
+                tx.success();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-           tx.failure(); e.printStackTrace();
+            e.printStackTrace();
+        } finally {
+            if (!transactionAllreadyRunning) {
+                tx.finish();
+            }
         }
 
     }
