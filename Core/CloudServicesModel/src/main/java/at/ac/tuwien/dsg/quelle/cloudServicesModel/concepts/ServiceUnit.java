@@ -86,7 +86,9 @@ public class ServiceUnit extends Entity {
     }
 
     public void addCostFunction(CostFunction cf) {
-        costFunctions.add(cf);
+        if (!costFunctions.contains(cf)) {
+            costFunctions.add(cf);
+        }
     }
 
     public void removeCostFunction(CostFunction cf) {
@@ -94,7 +96,9 @@ public class ServiceUnit extends Entity {
     }
 
     public void addResourceProperty(Resource resource) {
-        resourceProperties.add(resource);
+         if (!resourceProperties.contains(resource)) {
+            resourceProperties.add(resource);
+        }
     }
 
     public void removeResourceProperty(Resource resource) {
@@ -102,7 +106,9 @@ public class ServiceUnit extends Entity {
     }
 
     public void addQualityProperty(Quality quality) {
-        qualityProperties.add(quality);
+        if (!qualityProperties.contains(quality)) {
+            qualityProperties.add(quality);
+        }
     }
 
     public void removeQualityProperty(Quality quality) {

@@ -334,8 +334,10 @@ public class CostElementDAO extends Neo4JDAO {
                     for (String propertyKey : relationship.getPropertyKeys()) {
                         //assume property is interval, so must be numeric
                         Object propertyKeyValue = propertyKey;
-
-                        if (propertyKey.matches("[0-9]*")) {
+                        //not sure why writing positive infinity to string in neo4j reduces to this/
+                        if (propertyKey.equals("∞")) {
+                            propertyKeyValue = Double.POSITIVE_INFINITY;
+                        } else if (propertyKey.matches("[0-9]*")) {
                             try {
                                 propertyKeyValue = Integer.parseInt(propertyKey);
                             } catch (NumberFormatException e) {
