@@ -127,12 +127,12 @@ public class Entity implements Serializable {
         return this;
     }
 
-    public final Entity withUuid(final UUID uuid) {
+    public Entity withUuid(final UUID uuid) {
         this.uuid = uuid;
         return this;
     }
 
-    public final Entity withName(final String name) {
+    public Entity withName(final String name) {
         this.name = name;
         return this;
     }

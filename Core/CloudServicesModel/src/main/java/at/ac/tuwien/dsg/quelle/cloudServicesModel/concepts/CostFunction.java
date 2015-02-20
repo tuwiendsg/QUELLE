@@ -157,4 +157,19 @@ public class CostFunction extends Entity {
     public boolean equals(Object obj) {
         return super.equals(obj);
     }
+
+    public CostFunction withAppliedInConjunctionWith(final List<Entity> appliedInConjunctionWith) {
+        this.appliedInConjunctionWith = appliedInConjunctionWith;
+        return this;
+    }
+
+    public CostFunction withAppliedInConjunctionWith(Entity appliedInConjunctionWith) {
+        this.appliedInConjunctionWith.add(appliedInConjunctionWith);
+        return this;
+    }
+
+    public CostFunction withCostElement(CostElement costElement) {
+        this.costElements.add(costElement);
+        return this;
+    }
 }

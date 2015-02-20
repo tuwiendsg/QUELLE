@@ -18,6 +18,7 @@ package at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -96,7 +97,7 @@ public class ServiceUnit extends Entity {
     }
 
     public void addResourceProperty(Resource resource) {
-         if (!resourceProperties.contains(resource)) {
+        if (!resourceProperties.contains(resource)) {
             resourceProperties.add(resource);
         }
     }
@@ -318,4 +319,52 @@ public class ServiceUnit extends Entity {
         }
         return true;
     }
+
+    public ServiceUnit withCategory(final String category) {
+        this.category = category;
+        return this;
+    }
+
+    public ServiceUnit withSubcategory(final String subcategory) {
+        this.subcategory = subcategory;
+        return this;
+    }
+
+    public ServiceUnit withCostFunctions(final List<CostFunction> costFunctions) {
+        this.costFunctions = costFunctions;
+        return this;
+    }
+
+    public ServiceUnit withCostFunction(CostFunction costFunction) {
+        this.costFunctions.add(costFunction);
+        return this;
+    }
+
+    public ServiceUnit withResourceProperty(Resource resourceProperty) {
+        this.resourceProperties.add(resourceProperty);
+        return this;
+    }
+
+    public ServiceUnit withQualityProperty(Quality qualityProperty) {
+        this.qualityProperties.add(qualityProperty);
+        return this;
+    }
+
+    public ServiceUnit withElasticityCapability(ElasticityCapability elasticityCapability) {
+        this.elasticityCapabilities.add(elasticityCapability);
+        return this;
+    }
+
+    @Override
+    public ServiceUnit withName(String name) {
+        super.withName(name);
+        return this;
+    }
+
+    @Override
+    public ServiceUnit withUuid(UUID uuid) {
+        super.withUuid(uuid);
+        return this;
+    }
+
 }

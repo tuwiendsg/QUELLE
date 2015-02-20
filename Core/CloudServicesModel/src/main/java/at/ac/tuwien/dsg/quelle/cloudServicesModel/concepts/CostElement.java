@@ -19,6 +19,7 @@ package at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.util.conversions.helper.CostIntervalMapAdapter;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +31,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlEnum;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
@@ -82,6 +85,14 @@ public class CostElement extends Entity implements Comparable<CostElement> {
 
     }
 
+    public CostElement(String name, Metric costMetric, BillingPeriod billingPeriod, String type) {
+        super(name);
+        this.type = type;
+        this.costMetric = costMetric;
+        this.costMetric.setMeasurementUnit(this.costMetric.getMeasurementUnit() + "/" + billingPeriod.toString());
+        this.costMetric.setType(Metric.MetricType.COST);
+    }
+
     public String getType() {
         return type;
     }
@@ -107,7 +118,7 @@ public class CostElement extends Entity implements Comparable<CostElement> {
         this.costMetric.setType(Metric.MetricType.COST);
     }
 
-    private List<MetricValue> getCostIntervalsInAscendingOrder() {
+    public List<MetricValue> getCostIntervalsInAscendingOrder() {
         List<MetricValue> keys = new ArrayList<MetricValue>(costIntervalFunction.keySet());
         Collections.sort(keys, new Comparator<MetricValue>() {
             public int compare(MetricValue v1, MetricValue v2) {
@@ -196,4 +207,73 @@ public class CostElement extends Entity implements Comparable<CostElement> {
         public static final String PERIODIC = "PERIODIC";
         public static final String USAGE = "USAGE";
     }
+
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlRootElement(name = "Metric")
+    @XmlEnum
+    public enum BillingPeriod implements Serializable {
+
+        @XmlEnumValue("s")
+        SECOND("s"),
+        @XmlEnumValue("m")
+        MINUTE("m"),
+        @XmlEnumValue("h")
+        HOUR("h"),
+        //describes the elasticity of a monitored element
+        @XmlEnumValue("d")
+        DAY("d");
+
+        private String representation;
+
+        private BillingPeriod(String representation) {
+            this.representation = representation;
+        }
+
+        @Override
+        public String toString() {
+            return representation;
+        }
+
+        public BillingPeriod fromString(String representation) {
+            if (representation.equals("s")) {
+                return SECOND;
+            } else if (representation.equals("m")) {
+                return MINUTE;
+            } else if (representation.equals("h")) {
+                return HOUR;
+            } else if (representation.equals("d")) {
+                return DAY;
+            } else {
+                return SECOND;
+            }
+
+        }
+
+    }
+
+    public CostElement withType(final String type) {
+        this.type = type;
+        return this;
+    }
+
+    public CostElement withCostMetric(final Metric costMetric) {
+        this.costMetric = costMetric;
+        return this;
+    }
+
+    public CostElement withBillingPeriod(final BillingPeriod billingPeriod) {
+        this.costMetric.setMeasurementUnit(this.costMetric.getMeasurementUnit() + "/" + billingPeriod.toString());
+        return this;
+    }
+
+    public CostElement withCostInterval(final Map<MetricValue, Double> costIntervalFunction) {
+        this.costIntervalFunction = costIntervalFunction;
+        return this;
+    }
+
+    public CostElement withCostInterval(final MetricValue intervalUpperBound, Double value) {
+        this.costIntervalFunction.put(intervalUpperBound, value);
+        return this;
+    }
+
 }

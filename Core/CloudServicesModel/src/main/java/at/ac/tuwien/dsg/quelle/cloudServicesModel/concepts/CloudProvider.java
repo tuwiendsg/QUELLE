@@ -78,8 +78,6 @@ public class CloudProvider extends Entity {
     public void setServiceUnits(List<ServiceUnit> serviceUnits) {
         this.serviceUnits = serviceUnits;
     }
-    
-    
 
     @Override
     public String toString() {
@@ -91,4 +89,20 @@ public class CloudProvider extends Entity {
         public static final String IAAS = "IAAS";
         public static final String PAAS = "PAAS";
     }
+
+    public CloudProvider withServiceUnits(final List<ServiceUnit> serviceUnits) {
+        this.serviceUnits = serviceUnits;
+        return this;
+    }
+
+    public CloudProvider withServiceUnit(ServiceUnit serviceUnit) {
+        this.serviceUnits.add(serviceUnit);
+        return this;
+    }
+
+    public CloudProvider withType(final String type) {
+        this.type = type;
+        return this;
+    }
+
 }
