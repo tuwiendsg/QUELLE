@@ -44,7 +44,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "CostFunction")
-public class CostElement extends Entity implements Comparable<CostElement> {
+public class CostElement extends Unit implements Comparable<CostElement> {
 
     @XmlAttribute(name = "type", required = true)
     private String type;

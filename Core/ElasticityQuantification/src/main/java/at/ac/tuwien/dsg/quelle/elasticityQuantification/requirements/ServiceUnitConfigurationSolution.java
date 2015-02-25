@@ -19,7 +19,7 @@ package at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine.RequirementsMatchingReport;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
@@ -40,7 +40,7 @@ import org.json.simple.JSONObject;
 public class ServiceUnitConfigurationSolution {
 
     //unit for which we have the options and connected units
-    private ServiceUnit serviceUnit;
+    private CloudOfferedService serviceUnit;
     private List<RequirementsMatchingEngine.RequirementsMatchingReport<Quality>> chosenQualityOptions;
     private List<RequirementsMatchingEngine.RequirementsMatchingReport<Resource>> chosenResourceOptions;
     private List<Requirement> overallMatched;
@@ -113,11 +113,11 @@ public class ServiceUnitConfigurationSolution {
         this.optionallyAssociatedServiceUnits = optionallyAssociatedServiceUnits;
     }
 
-    public ServiceUnit getServiceUnit() {
+    public CloudOfferedService getServiceUnit() {
         return serviceUnit;
     }
 
-    public void setServiceUnit(ServiceUnit serviceUnit) {
+    public void setServiceUnit(CloudOfferedService serviceUnit) {
         this.serviceUnit = serviceUnit;
     }
 

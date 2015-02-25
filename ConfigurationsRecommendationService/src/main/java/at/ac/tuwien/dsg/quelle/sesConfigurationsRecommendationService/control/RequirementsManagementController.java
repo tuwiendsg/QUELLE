@@ -21,7 +21,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.Strategy;
 import at.ac.tuwien.dsg.quelle.sesConfigurationsRecommendationService.util.ConvertTOJSON;
@@ -114,7 +114,7 @@ public class RequirementsManagementController implements InitializingBean {
         cloudServicesMetrics.put(Metric.MetricType.RESOURCE, new ArrayList<Metric>());
 
         for (CloudProvider p : CloudProviderDAO.getAllCloudProviders(dataAccess.getGraphDatabaseService())) {
-            for (ServiceUnit unit : ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(p.getId(), dataAccess.getGraphDatabaseService())) {
+            for (CloudOfferedService unit : ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(p.getId(), dataAccess.getGraphDatabaseService())) {
                 updateServiceUnitMetrics(unit);
             }
         }
@@ -122,7 +122,7 @@ public class RequirementsManagementController implements InitializingBean {
 
     }
 
-    private void updateServiceUnitMetrics(ServiceUnit unit) {
+    private void updateServiceUnitMetrics(CloudOfferedService unit) {
         for (Resource r : unit.getResourceProperties()) {
             for (Metric m : r.getProperties().keySet()) {
                 if (!cloudServicesMetrics.get(m.getType()).contains(m)) {
@@ -171,9 +171,9 @@ public class RequirementsManagementController implements InitializingBean {
             }
         }
 
-        for (ElasticityCapability capability : unit.getElasticityCapabilities(ServiceUnit.class)) {
+        for (ElasticityCapability capability : unit.getElasticityCapabilities(CloudOfferedService.class)) {
             for (ElasticityCapability.Dependency dependency : capability.getCapabilityDependencies()) {
-                ServiceUnit serviceUnit = (ServiceUnit) dependency.getTarget();
+                CloudOfferedService serviceUnit = (CloudOfferedService) dependency.getTarget();
                 updateServiceUnitMetrics(serviceUnit);
             }
         }

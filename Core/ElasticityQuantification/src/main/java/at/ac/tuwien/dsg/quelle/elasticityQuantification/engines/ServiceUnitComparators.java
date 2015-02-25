@@ -19,7 +19,7 @@ package at.ac.tuwien.dsg.quelle.elasticityQuantification.engines;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.Strategy;
@@ -345,7 +345,7 @@ public class ServiceUnitComparators {
                     List<ElasticityCapability> costElasticity = options.getServiceUnit().getCostAssociations();
 //
                     //contains quality, resources and other service units
-                    List<Entity> chosenOptions = new ArrayList<>();
+                    List<Unit> chosenOptions = new ArrayList<>();
 
                     chosenOptions.addAll(options.getSolutionQualities());
                     chosenOptions.addAll(options.getSolutionResources());
@@ -359,12 +359,12 @@ public class ServiceUnitComparators {
                     for (ElasticityCapability capability : costElasticity) {
                         for (ElasticityCapability.Dependency dep : capability.getCapabilityDependencies()) {
                             CostFunction f = (CostFunction) dep.getTarget();
-                            if (f.getAppliedInConjunctionWith().isEmpty()) {
+                            if (f.getAppliedIfServiceInstanceUses().isEmpty()) {
                                 optionalCostsNotAsociatedToTarget.add(f);
                             } else {
 //                                //else search for target
-                                for (Entity entity : chosenOptions) {
-                                    if (f.getAppliedInConjunctionWith().contains(entity)) {
+                                for (Unit entity : chosenOptions) {
+                                    if (f.getAppliedIfServiceInstanceUses().contains(entity)) {
                                         for (CostElement element : f.getCostElements()) {
                                             elements.put(element.getCostMetric(), element);
                                         }

@@ -34,7 +34,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "Quality")
-public class Quality extends Entity implements Cloneable {
+public class Quality extends Unit implements Cloneable {
 
     @XmlJavaTypeAdapter(PropertiesAdapter.class)
     private Map<Metric, MetricValue> properties;
@@ -64,7 +64,7 @@ public class Quality extends Entity implements Cloneable {
     }
 
     public Quality clone() {
-        Entity clone = super.clone();
+        Unit clone = super.clone();
         Quality quality = new Quality(name);
         quality.setId(clone.id);
         for (Map.Entry<Metric, MetricValue> e : properties.entrySet()) {

@@ -32,8 +32,8 @@ import javax.xml.bind.annotation.XmlRootElement;
  *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlRootElement(name = "ServiceUnit")
-public class ServiceUnit extends Entity {
+@XmlRootElement(name = "CloudOfferedService")
+public class CloudOfferedService extends Unit {
 
     @XmlAttribute(name = "category", required = true)
     private String category;
@@ -65,10 +65,10 @@ public class ServiceUnit extends Entity {
         elasticityCapabilities = new ArrayList<ElasticityCapability>();
     }
 
-    public ServiceUnit() {
+    public CloudOfferedService() {
     }
 
-    public ServiceUnit(String category, String subcategory, String name) {
+    public CloudOfferedService(String category, String subcategory, String name) {
         super(name);
         this.category = category;
         this.subcategory = subcategory;
@@ -192,7 +192,7 @@ public class ServiceUnit extends Entity {
         for (ElasticityCapability capability : getElasticityCapabilities()) {
 
             //only optional associations towards ServiceUnit
-            if (!capability.getTargetType().equals(ServiceUnit.class)) {
+            if (!capability.getTargetType().equals(CloudOfferedService.class)) {
                 continue;
             }
 
@@ -307,7 +307,7 @@ public class ServiceUnit extends Entity {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final ServiceUnit other = (ServiceUnit) obj;
+        final CloudOfferedService other = (CloudOfferedService) obj;
         if ((this.category == null) ? (other.category != null) : !this.category.equals(other.category)) {
             return false;
         }
@@ -320,49 +320,49 @@ public class ServiceUnit extends Entity {
         return true;
     }
 
-    public ServiceUnit withCategory(final String category) {
+    public CloudOfferedService withCategory(final String category) {
         this.category = category;
         return this;
     }
 
-    public ServiceUnit withSubcategory(final String subcategory) {
+    public CloudOfferedService withSubcategory(final String subcategory) {
         this.subcategory = subcategory;
         return this;
     }
 
-    public ServiceUnit withCostFunctions(final List<CostFunction> costFunctions) {
+    public CloudOfferedService withCostFunctions(final List<CostFunction> costFunctions) {
         this.costFunctions = costFunctions;
         return this;
     }
 
-    public ServiceUnit withCostFunction(CostFunction costFunction) {
+    public CloudOfferedService withCostFunction(CostFunction costFunction) {
         this.costFunctions.add(costFunction);
         return this;
     }
 
-    public ServiceUnit withResourceProperty(Resource resourceProperty) {
+    public CloudOfferedService withResourceProperty(Resource resourceProperty) {
         this.resourceProperties.add(resourceProperty);
         return this;
     }
 
-    public ServiceUnit withQualityProperty(Quality qualityProperty) {
+    public CloudOfferedService withQualityProperty(Quality qualityProperty) {
         this.qualityProperties.add(qualityProperty);
         return this;
     }
 
-    public ServiceUnit withElasticityCapability(ElasticityCapability elasticityCapability) {
+    public CloudOfferedService withElasticityCapability(ElasticityCapability elasticityCapability) {
         this.elasticityCapabilities.add(elasticityCapability);
         return this;
     }
 
     @Override
-    public ServiceUnit withName(String name) {
+    public CloudOfferedService withName(String name) {
         super.withName(name);
         return this;
     }
 
     @Override
-    public ServiceUnit withUuid(UUID uuid) {
+    public CloudOfferedService withUuid(UUID uuid) {
         super.withUuid(uuid);
         return this;
     }

@@ -22,7 +22,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Type;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.evaluationFunctions.ElasticityCapabilityQuantificationFunction;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.evaluationFunctions.ElasticityDependencyEvalFunction;
@@ -48,7 +48,7 @@ import org.springframework.stereotype.Service;
 @Component
 public class CloudServiceElasticityAnalysisEngine extends CloudServiceUnitAnalysisEngine {
 
-    public AnalysisResult analyzeElasticity(ServiceUnit unit) {
+    public AnalysisResult analyzeElasticity(CloudOfferedService unit) {
 
         //elastiicy eval functions
         ElasticityVolatilityEvalFunction evef = new ElasticityVolatilityEvalFunction() {
@@ -110,7 +110,7 @@ public class CloudServiceElasticityAnalysisEngine extends CloudServiceUnitAnalys
             weights.put(CostFunction.class, 1.0);
             weights.put(Quality.class, 1.0);
             weights.put(Resource.class, 1.0);
-            weights.put(ServiceUnit.class, 1.0);
+            weights.put(CloudOfferedService.class, 1.0);
 
             overallElasticity = ElasticityCapabilityQuantificationFunction.eval(unit, weights, evef, epef, edef);
 
@@ -142,7 +142,7 @@ public class CloudServiceElasticityAnalysisEngine extends CloudServiceUnitAnalys
         //quantify quality elasticity
         {
 
-            serviceUnitElasticity = ElasticityCapabilityQuantificationFunction.eval(unit, ServiceUnit.class, evef, epef, edef);
+            serviceUnitElasticity = ElasticityCapabilityQuantificationFunction.eval(unit, CloudOfferedService.class, evef, epef, edef);
 
         }
 
@@ -166,7 +166,7 @@ public class CloudServiceElasticityAnalysisEngine extends CloudServiceUnitAnalys
         final List<AnalysisResult> analysisResults = Collections.synchronizedList(new ArrayList<AnalysisResult>());
         List<Thread> threads = new ArrayList<Thread>();
 
-        for (final ServiceUnit unit : cloudProvider.getServiceUnits()) {
+        for (final CloudOfferedService unit : cloudProvider.getCloudOfferedServices()) {
             if (!unit.getCategory().equals("IaaS")) {
                 continue;
             }

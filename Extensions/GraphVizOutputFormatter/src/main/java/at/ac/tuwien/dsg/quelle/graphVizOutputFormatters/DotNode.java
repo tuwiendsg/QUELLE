@@ -22,10 +22,10 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Dependency;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -97,14 +97,14 @@ public class DotNode {
      * @param entity
      * @return
      */
-    public static DotNode toDotNode(Entity entity) {
+    public static DotNode toDotNode(Unit entity) {
         DotNode dotNode = new DotNode(entity.getClass().getSimpleName());
 
         createdSoFar.add(dotNode);
 
         dotNode.addProperty("name", entity.getName());
-        if (entity instanceof ServiceUnit) {
-            ServiceUnit serviceUnit = (ServiceUnit) entity;
+        if (entity instanceof CloudOfferedService) {
+            CloudOfferedService serviceUnit = (CloudOfferedService) entity;
             dotNode.metaInfo = "shape=Mrecord,style=filled,fillcolor=\"#ACD1E9\",";
             dotNode.addProperty("category", serviceUnit.getCategory());
             dotNode.addProperty("subcategory", serviceUnit.getSubcategory());
@@ -155,7 +155,7 @@ public class DotNode {
      * @param unit
      * @return .dot Cluster containing the static Cost, Quality and Resource
      */
-    public static String getCompleteConfigurationAsDOT(ServiceUnit unit, DotNode serviceUnitNode) {
+    public static String getCompleteConfigurationAsDOT(CloudOfferedService unit, DotNode serviceUnitNode) {
         String staticCfg = "subgraph cluster_FixCfg" + serviceUnitNode.getNodeID() + " {"
                 + "label=\"Fixed Configuration\" \n";
         String relationships = "";
@@ -187,7 +187,7 @@ public class DotNode {
                     relationships += DotNode.getDotRelationship(rNode, ceNode, "hasCostElement");
                 }
 
-                for (Entity ce : costFunction.getAppliedInConjunctionWith()) {
+                for (Unit ce : costFunction.getAppliedIfServiceInstanceUses()) {
                     //check if exists in the "createdSoFar", else create it
                     boolean exists = false;
                     DotNode ceNode = DotNode.toDotNode(ce);
@@ -228,7 +228,7 @@ public class DotNode {
         return staticCfg + relationships;
     }
 
-    public static String getElasticityConfigurationAsDOT(ServiceUnit unit, DotNode serviceUnitNode) {
+    public static String getElasticityConfigurationAsDOT(CloudOfferedService unit, DotNode serviceUnitNode) {
         String cfg = "";
 
         //elasticity
@@ -255,13 +255,13 @@ public class DotNode {
         cluster += elasticityCapabilityNode.toDotString();
 
         for (Dependency d : capability.getCapabilityDependencies()) {
-            Entity target = d.getTarget();
+            Unit target = d.getTarget();
             DotNode targetNode = DotNode.toDotNode(target);
             cluster += targetNode.toDotString();
             cluster += DotNode.getDotRelationship(elasticityCapabilityNode, targetNode, "elasticityCapabilityFor");
 
-            if (target instanceof ServiceUnit) {
-                cluster += DotNode.getCompleteConfigurationAsDOT((ServiceUnit) target, targetNode);
+            if (target instanceof CloudOfferedService) {
+                cluster += DotNode.getCompleteConfigurationAsDOT((CloudOfferedService) target, targetNode);
             }
 
             if (target instanceof CostFunction) {
@@ -274,7 +274,7 @@ public class DotNode {
                     cluster += DotNode.getDotRelationship(targetNode, ceNode, "hasCostElement");
                 }
 
-                for (Entity ce : costFunction.getAppliedInConjunctionWith()) {
+                for (Unit ce : costFunction.getAppliedIfServiceInstanceUses()) {
                     boolean exists = false;
                     DotNode ceNode = DotNode.toDotNode(ce);
                     for (DotNode node : createdSoFar) {

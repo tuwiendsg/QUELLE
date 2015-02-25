@@ -17,7 +17,7 @@
 package at.ac.tuwien.dsg.quelle.graphVizOutputFormatters;
 
 import at.ac.tuwien.dsg.mela.common.requirements.Requirements;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.ServiceUnitConfigurationSolution;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class DOTWriter {
 
-    public static void writeServiceUnit(ServiceUnit unit, Writer writer) throws IOException {
+    public static void writeServiceUnit(CloudOfferedService unit, Writer writer) throws IOException {
 
         String dot = "digraph Neo { \n"
                 + "  node [ \n"

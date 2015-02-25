@@ -18,7 +18,7 @@ package at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos;
 
 import at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.helper.ServiceUnitRelationship;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CloudProviderDAO.UUID;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +87,7 @@ public class CloudProviderDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                cloudProvider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
+                cloudProvider.getCloudOfferedServices().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                 cloudProviders.add(cloudProvider);
             }
             if (!transactionAllreadyRunning) {
@@ -135,7 +135,7 @@ public class CloudProviderDAO extends Neo4JDAO {
                     }
 
                     //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                    cloudProvider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
+                    cloudProvider.getCloudOfferedServices().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                     cloudProviders.add(cloudProvider);
                 }
             }
@@ -206,7 +206,7 @@ public class CloudProviderDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                provider.getServiceUnits().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
+                provider.getCloudOfferedServices().addAll(ServiceUnitDAO.getCloudServiceUnitsForCloudProviderNode(node.getId(), database));
                 cloudProviders = provider;
 
                 break;
@@ -262,8 +262,8 @@ public class CloudProviderDAO extends Neo4JDAO {
             costFunctionNode.addLabel(LABEL);
 
             //persist serviceUnit elements
-            for (ServiceUnit serviceUnit : resourceToPersist.getServiceUnits()) {
-                ServiceUnit costElementFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+            for (CloudOfferedService serviceUnit : resourceToPersist.getCloudOfferedServices()) {
+                CloudOfferedService costElementFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                 //costFunction does not exist need to persist it
                 Node costElementNode = null;
                 if (costElementFound == null) {
@@ -321,8 +321,8 @@ public class CloudProviderDAO extends Neo4JDAO {
                     cloudProviderNode.addLabel(LABEL);
                 }
                 //persist serviceUnit elements
-                for (ServiceUnit serviceUnit : resourceToPersist.getServiceUnits()) {
-                    ServiceUnit costElementFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                for (CloudOfferedService serviceUnit : resourceToPersist.getCloudOfferedServices()) {
+                    CloudOfferedService costElementFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                     //costFunction does not exist need to persist it
                     Node costElementNode = null;
                     if (costElementFound == null) {

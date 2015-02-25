@@ -11,7 +11,7 @@ import at.ac.tuwien.dsg.mela.common.requirements.Requirement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.ServiceUnitConfigurationSolution;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class CloudServiceConfigurationRecommendation {
     private String recommendationName;
 
     @XmlElement(name = "CloudService", required = false)
-    private ServiceUnit serviceUnit;
+    private CloudOfferedService serviceUnit;
 
     @XmlElement(name = "Quality", required = false)
     private List<Quality> chosenQualityOptions;
@@ -147,11 +147,11 @@ public class CloudServiceConfigurationRecommendation {
         this.optionallyAssociatedServiceUnits = optionallyAssociatedServiceUnits;
     }
 
-    public ServiceUnit getServiceUnit() {
+    public CloudOfferedService getServiceUnit() {
         return serviceUnit;
     }
 
-    public void setServiceUnit(ServiceUnit serviceUnit) {
+    public void setServiceUnit(CloudOfferedService serviceUnit) {
         this.serviceUnit = serviceUnit;
     }
 

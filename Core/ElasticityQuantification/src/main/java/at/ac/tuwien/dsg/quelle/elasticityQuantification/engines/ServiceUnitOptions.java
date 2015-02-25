@@ -21,7 +21,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Dependency;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine.RequirementsMatchingReport;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.ServiceUnitConfigurationSolution;
 import at.ac.tuwien.dsg.mela.common.requirements.Requirement;
@@ -43,7 +43,7 @@ import java.util.Set;
 public class ServiceUnitOptions {
 
     //unit for which we have the options and connected units
-    private ServiceUnit serviceUnit;
+    private CloudOfferedService serviceUnit;
     //requirements matched for serviceUnit (DOES NOT contain req matched by optional or mandatory elements)
 
     //structured weird. This actually means: for Quality X, Set of Quality instantiation options
@@ -70,11 +70,11 @@ public class ServiceUnitOptions {
 
     }
 
-    public ServiceUnitOptions(ServiceUnit serviceUnit) {
+    public ServiceUnitOptions(CloudOfferedService serviceUnit) {
         this.serviceUnit = serviceUnit;
     }
 
-    public ServiceUnit getServiceUnit() {
+    public CloudOfferedService getServiceUnit() {
         return serviceUnit;
     }
 
@@ -126,8 +126,8 @@ public class ServiceUnitOptions {
         return list;
     }
 
-    public List<ServiceUnit> getSolutionServiceUnits() {
-        List<ServiceUnit> list = new ArrayList<>();
+    public List<CloudOfferedService> getSolutionServiceUnits() {
+        List<CloudOfferedService> list = new ArrayList<>();
 
         for (ServiceUnitOptions option : mandatoryConnectedServiceUnitsReport) {
             list.add(option.getServiceUnit());
@@ -275,7 +275,7 @@ public class ServiceUnitOptions {
             //ad cost functions which do not have associated with
             while (iterator.hasNext()) {
                 CostFunction cf = iterator.next();
-                if (cf.getAppliedInConjunctionWith().isEmpty()) {
+                if (cf.getAppliedIfServiceInstanceUses().isEmpty()) {
                     solution.addCostFunction(cf);
                     iterator.remove();
                 }
@@ -290,7 +290,7 @@ public class ServiceUnitOptions {
         }
 
         for (CostFunction cf : costFunctions) {
-            List<ServiceUnit> appliedInConjunctionWith = cf.getAppliedInConjunctionWithServiceUnit();
+            List<CloudOfferedService> appliedInConjunctionWith = cf.getAppliedIfServiceInstanceUsesCloudOfferedServices();
             for (ServiceUnitConfigurationSolution optional : solution.getOptionallyAssociatedServiceUnits()) {
                 if (appliedInConjunctionWith.contains(optional.getServiceUnit())) {
                     solution.addCostFunction(cf);
@@ -301,7 +301,7 @@ public class ServiceUnitOptions {
 
         //cost for mandatory
         for (CostFunction cf : costFunctions) {
-            List<ServiceUnit> appliedInConjunctionWith = cf.getAppliedInConjunctionWithServiceUnit();
+            List<CloudOfferedService> appliedInConjunctionWith = cf.getAppliedIfServiceInstanceUsesCloudOfferedServices();
             for (ServiceUnitConfigurationSolution optional : solution.getMandatoryAssociatedServiceUnits()) {
                 if (appliedInConjunctionWith.contains(optional.getServiceUnit())) {
                     solution.addCostFunction(cf);
@@ -312,7 +312,7 @@ public class ServiceUnitOptions {
 
         //cost for optional qualities
         for (CostFunction cf : costFunctions) {
-            List<Quality> appliedInConjunctionWith = cf.getAppliedInConjunctionWithQuality();
+            List<Quality> appliedInConjunctionWith = cf.getAppliedIfServiceInstanceUsesQuality();
             for (RequirementsMatchingReport<Quality> optional : solution.getChosenQualityOptions()) {
                 Quality optionalQuality = optional.getConcreteConfiguration();
                 for (Quality q : appliedInConjunctionWith) {
@@ -327,7 +327,7 @@ public class ServiceUnitOptions {
         }
         //cost for optional resources
         for (CostFunction cf : costFunctions) {
-            List<Resource> appliedInConjunctionWith = cf.getAppliedInConjunctionWithResource();
+            List<Resource> appliedInConjunctionWith = cf.getAppliedIfServiceInstanceUsesResource();
             for (RequirementsMatchingReport<Resource> optional : solution.getChosenResourceOptions()) {
                 Resource optionalQuality = optional.getConcreteConfiguration();
                 for (Resource q : appliedInConjunctionWith) {

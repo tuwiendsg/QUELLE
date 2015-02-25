@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "Entity")
-public class Entity implements Serializable {
+public class Unit implements Serializable {
 
     //used for neo4J storage
     @XmlAttribute(name = "id")
@@ -51,30 +51,30 @@ public class Entity implements Serializable {
         this.id = id;
     }
 
-    public Entity() {
+    public Unit() {
     }
 
-    public Entity(Long id) {
+    public Unit(Long id) {
         this.id = id;
     }
 
-    public Entity(String name) {
+    public Unit(String name) {
         this.name = name;
         this.uuid = UUID.randomUUID();
     }
 
-    public Entity(UUID uuid, String name) {
+    public Unit(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
     }
 
-    public Entity(Long id, UUID uuid, String name) {
+    public Unit(Long id, UUID uuid, String name) {
         this.id = id;
         this.uuid = uuid;
         this.name = name;
     }
 
-    public Entity(Long id, String name) {
+    public Unit(Long id, String name) {
         this.id = id;
         this.name = name;
         this.uuid = UUID.randomUUID();
@@ -96,8 +96,8 @@ public class Entity implements Serializable {
         this.name = name;
     }
 
-    public Entity clone() {
-        return new Entity(id, name);
+    public Unit clone() {
+        return new Unit(id, name);
     }
 
     @Override
@@ -115,24 +115,24 @@ public class Entity implements Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Entity other = (Entity) obj;
+        final Unit other = (Unit) obj;
         if (this.id != other.id && (this.id == null || !this.id.equals(other.id))) {
             return false;
         }
         return true;
     }
 
-    public final Entity withId(final Long id) {
+    public final Unit withId(final Long id) {
         this.id = id;
         return this;
     }
 
-    public Entity withUuid(final UUID uuid) {
+    public Unit withUuid(final UUID uuid) {
         this.uuid = uuid;
         return this;
     }
 
-    public Entity withName(final String name) {
+    public Unit withName(final String name) {
         this.name = name;
         return this;
     }

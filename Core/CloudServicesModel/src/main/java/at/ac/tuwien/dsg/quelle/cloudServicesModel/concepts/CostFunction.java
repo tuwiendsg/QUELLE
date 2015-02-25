@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "CostFunction")
-public class CostFunction extends Entity {
+public class CostFunction extends Unit {
 
     //utility for which cost is applied
     //private serviceUnit utility;
@@ -44,13 +44,13 @@ public class CostFunction extends Entity {
     @XmlElement(name = "InConjunctionWith", required = false)
     //@XmlTransient
     //if more, means logical AND between them
-    private List<Entity> appliedInConjunctionWith;
+    private List<Unit> appliedInConjunctionWith;
     @XmlElement(name = "CostElement", required = false)
     private List<CostElement> costElements;
 
     {
         costElements = new ArrayList<CostElement>();
-        appliedInConjunctionWith = new ArrayList<Entity>();
+        appliedInConjunctionWith = new ArrayList<Unit>();
     }
 
     public CostFunction() {
@@ -60,11 +60,11 @@ public class CostFunction extends Entity {
         super(name);
     }
 
-    public List<Entity> getAppliedInConjunctionWith() {
+    public List<Unit> getAppliedIfServiceInstanceUses() {
         return appliedInConjunctionWith;
     }
 
-    public void setAppliedInConjunctionWith(List<Entity> appliedInConjunctionWith) {
+    public void setAppliedIfServiceInstanceUses(List<Unit> appliedInConjunctionWith) {
         this.appliedInConjunctionWith = appliedInConjunctionWith;
     }
 
@@ -72,9 +72,9 @@ public class CostFunction extends Entity {
         this.costElements = costElements;
     }
 
-    public List<Quality> getAppliedInConjunctionWithQuality() {
+    public List<Quality> getAppliedIfServiceInstanceUsesQuality() {
         List<Quality> list = new ArrayList<Quality>();
-        for (Entity e : appliedInConjunctionWith) {
+        for (Unit e : appliedInConjunctionWith) {
             if (e instanceof Quality) {
                 list.add((Quality) e);
             }
@@ -82,9 +82,9 @@ public class CostFunction extends Entity {
         return list;
     }
 
-    public List<Resource> getAppliedInConjunctionWithResource() {
+    public List<Resource> getAppliedIfServiceInstanceUsesResource() {
         List<Resource> list = new ArrayList<Resource>();
-        for (Entity e : appliedInConjunctionWith) {
+        for (Unit e : appliedInConjunctionWith) {
             if (e instanceof Resource) {
                 list.add((Resource) e);
             }
@@ -92,11 +92,11 @@ public class CostFunction extends Entity {
         return list;
     }
 
-    public List<ServiceUnit> getAppliedInConjunctionWithServiceUnit() {
-        List<ServiceUnit> list = new ArrayList<ServiceUnit>();
-        for (Entity e : appliedInConjunctionWith) {
-            if (e instanceof ServiceUnit) {
-                list.add((ServiceUnit) e);
+    public List<CloudOfferedService> getAppliedIfServiceInstanceUsesCloudOfferedServices() {
+        List<CloudOfferedService> list = new ArrayList<CloudOfferedService>();
+        for (Unit e : appliedInConjunctionWith) {
+            if (e instanceof CloudOfferedService) {
+                list.add((CloudOfferedService) e);
             }
         }
         return list;
@@ -127,7 +127,7 @@ public class CostFunction extends Entity {
         costElements.remove(ce);
     }
 
-    public void addUtilityAppliedInConjunctionWith(Entity u) {
+    public void addAppliedIfServiceInstanceUses(Unit u) {
         if (u instanceof CostFunction) {
             System.err.println("Adding " + u.name + " as in conjunction with for " + this.name);
             new Exception().printStackTrace();
@@ -135,7 +135,7 @@ public class CostFunction extends Entity {
         this.appliedInConjunctionWith.add(u);
     }
 
-    public void removeUtilityAppliedInConjunctionWith(Entity u) {
+    public void removeUtilityAppliedInConjunctionWith(Unit u) {
         this.appliedInConjunctionWith.remove(u);
     }
 
@@ -158,12 +158,12 @@ public class CostFunction extends Entity {
         return super.equals(obj);
     }
 
-    public CostFunction withAppliedInConjunctionWith(final List<Entity> appliedInConjunctionWith) {
+    public CostFunction withAppliedIfServiceInstanceUses(final List<Unit> appliedInConjunctionWith) {
         this.appliedInConjunctionWith = appliedInConjunctionWith;
         return this;
     }
 
-    public CostFunction withAppliedInConjunctionWith(Entity appliedInConjunctionWith) {
+    public CostFunction withAppliedIfServiceInstanceUses(Unit appliedInConjunctionWith) {
         this.appliedInConjunctionWith.add(appliedInConjunctionWith);
         return this;
     }

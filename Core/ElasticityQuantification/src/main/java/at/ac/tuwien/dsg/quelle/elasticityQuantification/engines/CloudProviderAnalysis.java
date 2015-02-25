@@ -8,7 +8,7 @@ package at.ac.tuwien.dsg.quelle.elasticityQuantification.engines;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Dependency;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class CloudProviderAnalysis {
     public int getNrOfServices(CloudProvider cloudProvider, String serviceCategory, String serviceSubcategory) {
         int servicesCount = 0;
         //sum of possible configurations for each service unit
-        for (ServiceUnit serviceUnit : cloudProvider.getServiceUnits()) {
+        for (CloudOfferedService serviceUnit : cloudProvider.getCloudOfferedServices()) {
             if (serviceUnit.getCategory().equals(serviceCategory) && serviceUnit.getSubcategory().equals(serviceSubcategory)) {
                 System.out.println(serviceUnit.getName());
                 servicesCount ++;
@@ -35,7 +35,7 @@ public class CloudProviderAnalysis {
     public int getNrOfPossibleConfigurations(CloudProvider cloudProvider, String serviceCategory, String serviceSubcategory) {
         int possibleCFGS = 0;
         //sum of possible configurations for each service unit
-        for (ServiceUnit serviceUnit : cloudProvider.getServiceUnits()) {
+        for (CloudOfferedService serviceUnit : cloudProvider.getCloudOfferedServices()) {
             if (serviceUnit.getCategory().equals(serviceCategory) && serviceUnit.getSubcategory().equals(serviceSubcategory)) {
                 possibleCFGS += getNrOfPossibleCFGForServiceUnit(serviceUnit);
             }
@@ -44,16 +44,16 @@ public class CloudProviderAnalysis {
         return possibleCFGS;
     }
 
-    private int getNrOfPossibleCFGForServiceUnit(ServiceUnit serviceUnit) {
+    private int getNrOfPossibleCFGForServiceUnit(CloudOfferedService serviceUnit) {
         int possibleCFGS = 1;
         for (ElasticityCapability capability : serviceUnit.getElasticityCapabilities()) {
             
             int possibleCFGSCapability = 0;
 
             for (Dependency dep : capability.getCapabilityDependencies()) {
-                if (dep.getTarget() instanceof ServiceUnit) {
+                if (dep.getTarget() instanceof CloudOfferedService) {
                     //if service unit, it might have many options
-                    possibleCFGSCapability += getNrOfPossibleCFGForServiceUnit((ServiceUnit) dep.getTarget());
+                    possibleCFGSCapability += getNrOfPossibleCFGForServiceUnit((CloudOfferedService) dep.getTarget());
                 } else {
                     //if dependency not service unit, counts as 1 option
                     possibleCFGSCapability++;

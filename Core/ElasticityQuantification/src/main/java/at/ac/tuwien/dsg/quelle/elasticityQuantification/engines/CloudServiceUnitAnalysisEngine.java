@@ -19,7 +19,7 @@ package at.ac.tuwien.dsg.quelle.elasticityQuantification.engines;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Dependency;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,7 +44,7 @@ public class CloudServiceUnitAnalysisEngine {
     public final static String SERVICE_UNIT_ASSOCIATION_ELASTICITY = "Service Unit Association Elasticity";
     public final static String COST_ELASTICITY = "Cost Elasticity";
 
-    public AnalysisResult analyzeElasticity(ServiceUnit unit) {
+    public AnalysisResult analyzeElasticity(CloudOfferedService unit) {
 
         AnalysisResult result = new AnalysisResult(unit);
 
@@ -98,7 +98,7 @@ public class CloudServiceUnitAnalysisEngine {
         final List<AnalysisResult> analysisResults = Collections.synchronizedList(new ArrayList<AnalysisResult>());
         List<Thread> threads = new ArrayList<Thread>();
 
-        for (final ServiceUnit unit : cloudProvider.getServiceUnits()) {
+        for (final CloudOfferedService unit : cloudProvider.getCloudOfferedServices()) {
             if (!unit.getCategory().equals("IaaS")) {
                 continue;
             }
@@ -176,7 +176,7 @@ public class CloudServiceUnitAnalysisEngine {
         //use to keep the keys to avoid getting them from the map.
         //if proven useless
 
-        private ServiceUnit unit;
+        private CloudOfferedService unit;
         private List<String> resultFields;
         private Map<String, Object> analysis;
 
@@ -185,7 +185,7 @@ public class CloudServiceUnitAnalysisEngine {
             analysis = new HashMap<String, Object>();
         }
 
-        public AnalysisResult(ServiceUnit unit) {
+        public AnalysisResult(CloudOfferedService unit) {
             this.unit = unit;
         }
 
@@ -204,7 +204,7 @@ public class CloudServiceUnitAnalysisEngine {
             return resultFields;
         }
 
-        public ServiceUnit getUnit() {
+        public CloudOfferedService getUnit() {
             return unit;
         }
 

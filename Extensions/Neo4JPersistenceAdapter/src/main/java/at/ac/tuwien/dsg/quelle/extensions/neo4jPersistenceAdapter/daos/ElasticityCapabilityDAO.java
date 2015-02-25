@@ -22,10 +22,10 @@ import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability.Dependency;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import java.util.ArrayList;
 import java.util.List;
@@ -351,7 +351,7 @@ public class ElasticityCapabilityDAO extends Neo4JDAO {
 
             for (Dependency dependency : dependencys) {
 
-                Entity capabilityTarget = dependency.getTarget();
+                Unit capabilityTarget = dependency.getTarget();
                 //persist target. 
                 //the ElasticityCapability values are persisted per individual CloudServiceUnit relationship HAS_ELASTICITY_CHARACTERISTIC
                 if (capabilityTarget instanceof Resource) {
@@ -404,9 +404,9 @@ public class ElasticityCapabilityDAO extends Neo4JDAO {
                         relationship.setProperty(propertyKey, entry.getValue().getValue());
                     }
 
-                } else if (capabilityTarget instanceof ServiceUnit) {
-                    ServiceUnit serviceUnit = (ServiceUnit) capabilityTarget;
-                    ServiceUnit targetFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                } else if (capabilityTarget instanceof CloudOfferedService) {
+                    CloudOfferedService serviceUnit = (CloudOfferedService) capabilityTarget;
+                    CloudOfferedService targetFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                     //costFunction does not exist need to persist it
                     Node costElementNode = null;
                     if (targetFound == null) {
@@ -494,7 +494,7 @@ public class ElasticityCapabilityDAO extends Neo4JDAO {
 
                 for (Dependency dependency : dependencys) {
 
-                    Entity capabilityTarget = dependency.getTarget();
+                    Unit capabilityTarget = dependency.getTarget();
                     //persist target. 
                     //the ElasticityCapability values are persisted per individual CloudServiceUnit relationship HAS_ELASTICITY_CHARACTERISTIC
                     if (capabilityTarget instanceof Resource) {
@@ -536,9 +536,9 @@ public class ElasticityCapabilityDAO extends Neo4JDAO {
                         Volatility volatility = dependency.getVolatility();
                         relationship.setProperty(VOLATILITY_TIME_UNIT, volatility.getMinimumLifetimeInHours());
                         relationship.setProperty(VOLATILITY_MAX_CHANGES, volatility.getMaxNrOfChanges());
-                    } else if (capabilityTarget instanceof ServiceUnit) {
-                        ServiceUnit serviceUnit = (ServiceUnit) capabilityTarget;
-                        ServiceUnit targetFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                    } else if (capabilityTarget instanceof CloudOfferedService) {
+                        CloudOfferedService serviceUnit = (CloudOfferedService) capabilityTarget;
+                        CloudOfferedService targetFound = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                         //costFunction does not exist need to persist it
                         Node costElementNode = null;
                         if (targetFound == null) {

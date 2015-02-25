@@ -5,17 +5,17 @@
  */
 package at.ac.tuwien.dsg.quelle.elasticityQuantification.util;
 
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import java.util.Comparator;
 
 /**
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-public class ServiceUnitComparator implements Comparator<ServiceUnit> {
+public class ServiceUnitComparator implements Comparator<CloudOfferedService> {
 
     @Override
-    public int compare(ServiceUnit o1, ServiceUnit o2) {
+    public int compare(CloudOfferedService o1, CloudOfferedService o2) {
         String o1_type = o1.getCategory();
         String o2_type = o2.getCategory();
         switch (o1_type) {

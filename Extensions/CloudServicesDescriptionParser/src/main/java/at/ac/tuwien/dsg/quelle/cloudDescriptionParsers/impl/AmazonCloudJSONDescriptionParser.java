@@ -14,7 +14,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
         //used to fast add cost properties
         //key is ServiceUnit name = its ID, such as m1.large
-        Map<String, ServiceUnit> units = new HashMap<>();
+        Map<String, CloudOfferedService> units = new HashMap<>();
 
         //key is ServiceUnit name = its ID, such as m1.large
         Map<String, List<ElasticityCapability.Dependency>> costDependencies = new HashMap<>();
@@ -70,8 +70,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         //other misc Amazon Services 
         {
             //create EBS instance
-            ServiceUnit ebsStorageUtility = new ServiceUnit("IaaS", "Storage", "EBS");
-            cloudProvider.addServiceUnit(ebsStorageUtility);
+            CloudOfferedService ebsStorageUtility = new CloudOfferedService("IaaS", "Storage", "EBS");
+            cloudProvider.addCloudOfferedService(ebsStorageUtility);
             {
                 List<ElasticityCapability.Dependency> qualityCapabilityTargets = new ArrayList<>();
 
@@ -121,7 +121,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                     costPerIO.addCostInterval(new MetricValue(1), 0.1);
                     costFunctionForStdPerformance.addCostElement(costPerIO);
                 }
-                costFunctionForStdPerformance.addUtilityAppliedInConjunctionWith(stdQuality);
+                costFunctionForStdPerformance.addAppliedIfServiceInstanceUses(stdQuality);
                 // utility.addCostFunction(costFunctionForStdPerformance);
 
                 CostFunction costFunctionForMaxPerformance = new CostFunction("HighIOPerformanceCost");
@@ -139,7 +139,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                     costPerIO.addCostInterval(new MetricValue(1), 0.1);
                     costFunctionForMaxPerformance.addCostElement(costPerIO);
                 }
-                costFunctionForMaxPerformance.addUtilityAppliedInConjunctionWith(highQuality);
+                costFunctionForMaxPerformance.addAppliedIfServiceInstanceUses(highQuality);
                 // utility.addCostFunction(costFunctionForMaxPerformance);
 
                 {
@@ -158,8 +158,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         {
             //Monitoring
             {
-                ServiceUnit utility = new ServiceUnit("MaaS", "Monitoring", "Monitoring");
-                cloudProvider.addServiceUnit(utility);
+                CloudOfferedService utility = new CloudOfferedService("MaaS", "Monitoring", "Monitoring");
+                cloudProvider.addCloudOfferedService(utility);
 
                 List<ElasticityCapability.Dependency> qualityCapabilityTargets = new ArrayList<>();
                 List<ElasticityCapability.Dependency> costCapabilityTargets = new ArrayList<>();
@@ -195,7 +195,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                     CostElement monCost = new CostElement("MonitoringCost", new Metric("monitoringCost", "$/hour", Metric.MetricType.COST), CostElement.Type.USAGE);
                     monCost.addCostInterval(new MetricValue(1), 0.0);
                     costFunctionForStdMonitoring.addCostElement(monCost);
-                    costFunctionForStdMonitoring.addUtilityAppliedInConjunctionWith(stdQuality);
+                    costFunctionForStdMonitoring.addAppliedIfServiceInstanceUses(stdQuality);
                     costCapabilityTargets.add(new ElasticityCapability.Dependency(costFunctionForStdMonitoring, ElasticityCapability.Type.OPTIONAL_ASSOCIATION)
                             .withVolatility(new Volatility(0, 0)));
                 }
@@ -205,7 +205,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                     CostElement monCost = new CostElement("MonitoringCost", new Metric("monitoringCost", "$/month", Metric.MetricType.COST), CostElement.Type.USAGE);
                     monCost.addCostInterval(new MetricValue(1), 3.5);
                     costFunctionForCustomMonitoring.addCostElement(monCost);
-                    costFunctionForCustomMonitoring.addUtilityAppliedInConjunctionWith(higherQuality);
+                    costFunctionForCustomMonitoring.addAppliedIfServiceInstanceUses(higherQuality);
                     costCapabilityTargets.add(new ElasticityCapability.Dependency(costFunctionForCustomMonitoring, ElasticityCapability.Type.OPTIONAL_ASSOCIATION)
                             .withVolatility(new Volatility(0, 0)));
                 }
@@ -227,8 +227,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         {
             //Amazon SQS 
             {
-                ServiceUnit sqs = new ServiceUnit("PaaS", "CommunicationServices", "SimpleQueue");
-                cloudProvider.addServiceUnit(sqs);
+                CloudOfferedService sqs = new CloudOfferedService("PaaS", "CommunicationServices", "SimpleQueue");
+                cloudProvider.addCloudOfferedService(sqs);
 
                 //utility quality
                 Resource resource = new Resource("MessagingService");
@@ -281,8 +281,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                     value = value.replaceAll(",", "");
                     builder.addProperty(builder.getPropertyNames().get(j), value);
                 }
-                ServiceUnit unit = builder.getUnit();
-                cloudProvider.addServiceUnit(unit);
+                CloudOfferedService unit = builder.getUnit();
+                cloudProvider.addCloudOfferedService(unit);
                 units.put(unit.getName(), unit);
 
                 System.out.println();
@@ -343,7 +343,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                 for (ElasticityCapability.Dependency d : costDependencies.get(suName)) {
                     characteristic.addCapabilityDependency(d);
                 }
-                ServiceUnit unit = units.get(suName);
+                CloudOfferedService unit = units.get(suName);
                 unit.addElasticityCapability(characteristic);
             }
         }
@@ -354,7 +354,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
     }
 
-    private void addReservedCostOptions(String schemeName, String pricingSchemeURL, CloudProvider cloudProvider, Map<String, ServiceUnit> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
+    private void addReservedCostOptions(String schemeName, String pricingSchemeURL, CloudProvider cloudProvider, Map<String, CloudOfferedService> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
         {
 
             URL url = new URL(pricingSchemeURL);
@@ -434,7 +434,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                                     String priceName = price.get("name").toString();
 
 //                                ServiceUnit _1YearReservationScheme = new ServiceUnit("Management", "ReservationScheme", "1YearLightUtilization");
-//                                cloudProvider.addServiceUnit(_1YearReservationScheme);
+//                                cloudProvider.addCloudOfferedService(_1YearReservationScheme);
 //                                
 //                                Resource r = new Resource("ReservationPeriod");
 //                                r.addProperty(new Metric("Reservation", "duration"), new MetricValue("1 year"));
@@ -484,7 +484,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         }
     }
 
-    private void addOndemandCostOptions(String pricingSchemeURL, CloudProvider cloudProvider, Map<String, ServiceUnit> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
+    private void addOndemandCostOptions(String pricingSchemeURL, CloudProvider cloudProvider, Map<String, CloudOfferedService> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
         {
 
             URL url = new URL(pricingSchemeURL);
@@ -540,14 +540,14 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                             String sizeName = size.get("size").toString();
 
                             if (units.containsKey(sizeName)) {
-                                ServiceUnit unit = units.get(sizeName);
+                                CloudOfferedService unit = units.get(sizeName);
 
                                 JSONArray prices = (JSONArray) size.get("valueColumns");
                                 for (int priceIndex = 0; priceIndex < prices.size(); priceIndex++) {
                                     JSONObject price = (JSONObject) prices.get(priceIndex);
 
 //                                ServiceUnit _1YearReservationScheme = new ServiceUnit("Management", "ReservationScheme", "1YearLightUtilization");
-//                                cloudProvider.addServiceUnit(_1YearReservationScheme);
+//                                cloudProvider.addCloudOfferedService(_1YearReservationScheme);
                                     //curently i need diff   CostFunctionNames
                                     CostFunction onDemand = new CostFunction("OndemandCost_" + sizeName);
 
@@ -584,7 +584,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         }
     }
 
-    private void addSpotCostOptions(String pricingSchemeURL, CloudProvider cloudProvider, Map<String, ServiceUnit> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
+    private void addSpotCostOptions(String pricingSchemeURL, CloudProvider cloudProvider, Map<String, CloudOfferedService> units, Map<String, List<ElasticityCapability.Dependency>> costDependencies) throws MalformedURLException, IOException, ParseException {
         {
 
             URL url = new URL(pricingSchemeURL);
@@ -627,7 +627,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                             JSONObject size = (JSONObject) sizes.get(sizeIndex);
                             String sizeName = size.get("size").toString();
                             if (units.containsKey(sizeName)) {
-                                ServiceUnit unit = units.get(sizeName);
+                                CloudOfferedService unit = units.get(sizeName);
 
                                 //go through different OS types
                                 JSONArray oss = (JSONArray) size.get("valueColumns");
@@ -640,7 +640,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                                         // add cost elasticity capability
                                         {
 //                                            ServiceUnit reservationScheme = new ServiceUnit("Management", "ReservationScheme", "Spot");
-//                                            cloudProvider.addServiceUnit(reservationScheme);
+//                                            cloudProvider.addCloudOfferedService(reservationScheme);
 //                                            Resource r = new Resource("ReservationPeriod");
 //                                            r.addProperty(new Metric("Reservation", "duration"), new MetricValue("hour"));
 //                                            reservationScheme.addResourceProperty(r);
@@ -691,7 +691,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
      */
     private class ServiceUnitBuilder {
 
-        private ServiceUnit unit;
+        private CloudOfferedService unit;
         private List<Resource> cpuOptions = new ArrayList<>();
         private boolean ebsOnly = false;
 
@@ -720,12 +720,12 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         //EBS-optimized Available
         //Network Performance
         public ServiceUnitBuilder(String category, String subcategory) {
-            unit = new ServiceUnit();
+            unit = new CloudOfferedService();
             unit.setCategory(category);
             unit.setSubcategory(subcategory);
         }
 
-        public ServiceUnit getUnit() {
+        public CloudOfferedService getUnit() {
             return unit;
         }
 
@@ -829,7 +829,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
                     break;
                 case "EBS-optimized Available":
-                    ServiceUnit ebsStorageUtility = new ServiceUnit("IaaS", "Storage", "EBS");
+                    CloudOfferedService ebsStorageUtility = new CloudOfferedService("IaaS", "Storage", "EBS");
                     switch (value) {
                         case "Yes": {
 
@@ -873,7 +873,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
                                             CostElement.Type.PERIODIC);
                                     hourlyCost.addCostInterval(new MetricValue(1), 0.025);
                                     onDemandCost.addCostElement(hourlyCost);
-                                    onDemandCost.addUtilityAppliedInConjunctionWith(q);
+                                    onDemandCost.addAppliedIfServiceInstanceUses(q);
                                 }
 
                                 // utility elasticity charact for resource" lets the utility

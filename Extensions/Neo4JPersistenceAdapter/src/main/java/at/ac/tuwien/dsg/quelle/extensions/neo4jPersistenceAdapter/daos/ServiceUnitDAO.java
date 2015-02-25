@@ -25,7 +25,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ResourceDAO.log;
 import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.ServiceUnitDAO.UUID;
@@ -122,7 +122,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
 
                 Node node = path.endNode();
 
-                ServiceUnit serviceUnit = new ServiceUnit();
+                CloudOfferedService serviceUnit = new CloudOfferedService();
                 serviceUnit.setId(node.getId());
                 if (node.hasProperty(KEY)) {
                     serviceUnit.setName(node.getProperty(KEY).toString());
@@ -216,7 +216,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
      */
     public static int getElasticityDependency(long id, EmbeddedGraphDatabase database) {
 
-        ServiceUnit elTarget = null;
+        CloudOfferedService elTarget = null;
         int incomingPaths = 0;
         boolean transactionAllreadyRunning = false;
         try {
@@ -271,9 +271,9 @@ public class ServiceUnitDAO extends Neo4JDAO {
      * @param database
      * @return
      */
-    public static List<ServiceUnit> searchForCloudServiceUnits(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
+    public static List<CloudOfferedService> searchForCloudServiceUnits(CloudOfferedService serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
-        List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
+        List<CloudOfferedService> serviceUnits = new ArrayList<CloudOfferedService>();
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -287,7 +287,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
 
             for (Node node : nodes) {
 
-                ServiceUnit serviceUnit = new ServiceUnit();
+                CloudOfferedService serviceUnit = new CloudOfferedService();
                 serviceUnit.setId(node.getId());
                 if (node.hasProperty(KEY)) {
                     serviceUnit.setName(node.getProperty(KEY).toString());
@@ -319,7 +319,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
             }
 
             //extract other referenced members
-            for (ServiceUnit serviceUnit : serviceUnits) {
+            for (CloudOfferedService serviceUnit : serviceUnits) {
                 serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
@@ -350,9 +350,9 @@ public class ServiceUnitDAO extends Neo4JDAO {
      * @param database
      * @return
      */
-    public static ServiceUnit searchForCloudServiceUnitsUniqueResult(ServiceUnit serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
+    public static CloudOfferedService searchForCloudServiceUnitsUniqueResult(CloudOfferedService serviceUnitToSearchFor, EmbeddedGraphDatabase database) {
 
-        ServiceUnit serviceUnitFound = null;
+        CloudOfferedService serviceUnitFound = null;
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -375,7 +375,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
                     log.warn("Retrieved serviceUnit " + serviceUnitToSearchFor + " has no name");
                 }
 
-                ServiceUnit serviceUnit = new ServiceUnit();
+                CloudOfferedService serviceUnit = new CloudOfferedService();
                 serviceUnit.setId(node.getId());
                 if (node.hasProperty(KEY)) {
                     serviceUnit.setName(node.getProperty(KEY).toString());
@@ -433,9 +433,9 @@ public class ServiceUnitDAO extends Neo4JDAO {
         return serviceUnitFound;
     }
 
-    public static ServiceUnit getByID(Long nodeID, EmbeddedGraphDatabase database) {
+    public static CloudOfferedService getByID(Long nodeID, EmbeddedGraphDatabase database) {
 
-        ServiceUnit serviceUnit = null;
+        CloudOfferedService serviceUnit = null;
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -462,7 +462,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
                 if (!node.hasLabel(LABEL)) {
                     continue;
                 }
-                serviceUnit = new ServiceUnit();
+                serviceUnit = new CloudOfferedService();
                 serviceUnit.setId(node.getId());
 
                 if (node.hasProperty(KEY)) {
@@ -513,9 +513,9 @@ public class ServiceUnitDAO extends Neo4JDAO {
         return serviceUnit;
     }
 
-    public static List<ServiceUnit> getCloudServiceUnitsForCloudProviderNode(Long nodeID, EmbeddedGraphDatabase database) {
+    public static List<CloudOfferedService> getCloudServiceUnitsForCloudProviderNode(Long nodeID, EmbeddedGraphDatabase database) {
 
-        List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
+        List<CloudOfferedService> serviceUnits = new ArrayList<CloudOfferedService>();
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -545,7 +545,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
             for (Path path : traverser) {
 
                 Node node = path.endNode();
-                ServiceUnit serviceUnit = new ServiceUnit();
+                CloudOfferedService serviceUnit = new CloudOfferedService();
                 serviceUnit.setId(node.getId());
 
                 if (node.hasProperty(KEY)) {
@@ -578,7 +578,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
 
             }
 
-            for (ServiceUnit serviceUnit : serviceUnits) {
+            for (CloudOfferedService serviceUnit : serviceUnits) {
                 serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
@@ -610,9 +610,9 @@ public class ServiceUnitDAO extends Neo4JDAO {
      * @param database
      * @return
      */
-    public static List<ServiceUnit> getConnectedComponentsByElasticityCapabilitiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
+    public static List<CloudOfferedService> getConnectedComponentsByElasticityCapabilitiesForNode(Long nodeID, EmbeddedGraphDatabase database) {
 
-        List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
+        List<CloudOfferedService> serviceUnits = new ArrayList<CloudOfferedService>();
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -659,7 +659,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
                     if (!node.hasLabel(LABEL)) {
                         continue;
                     }
-                    ServiceUnit serviceUnit = new ServiceUnit();
+                    CloudOfferedService serviceUnit = new CloudOfferedService();
                     serviceUnit.setId(node.getId());
 
                     if (node.hasProperty(KEY)) {
@@ -692,7 +692,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
                 }
             }
 
-            for (ServiceUnit serviceUnit : serviceUnits) {
+            for (CloudOfferedService serviceUnit : serviceUnits) {
                 serviceUnit.getResourceProperties().addAll(ResourceDAO.getResourcePropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getQualityProperties().addAll(QualityDAO.getQualityPropertiesForNode(serviceUnit.getId(), database));
                 serviceUnit.getCostFunctions().addAll(CostFunctionDAO.getCostFunctionsForNode(serviceUnit.getId(), database));
@@ -722,7 +722,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
      * @param resourceToPersist
      * @param database connection to DB
      */
-    public static Node persistServiceUnit(ServiceUnit serviceUnitToPersist, EmbeddedGraphDatabase database) {
+    public static Node persistServiceUnit(CloudOfferedService serviceUnitToPersist, EmbeddedGraphDatabase database) {
 
         Node serviceUnitNode = null;
         boolean transactionAllreadyRunning = false;
@@ -862,7 +862,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
         return serviceUnitNode;
     }
 
-    public static void persistCloudServiceUnits(List<ServiceUnit> cloudServiceUnitsToPersist, EmbeddedGraphDatabase database) {
+    public static void persistCloudServiceUnits(List<CloudOfferedService> cloudServiceUnitsToPersist, EmbeddedGraphDatabase database) {
         boolean transactionAllreadyRunning = false;
         try {
             transactionAllreadyRunning = (database.getTxManager().getStatus() == Status.STATUS_ACTIVE);
@@ -872,7 +872,7 @@ public class ServiceUnitDAO extends Neo4JDAO {
         Transaction tx = (transactionAllreadyRunning) ? null : database.beginTx();
 
         try {
-            for (ServiceUnit serviceUnitToPersist : cloudServiceUnitsToPersist) {
+            for (CloudOfferedService serviceUnitToPersist : cloudServiceUnitsToPersist) {
                 Node serviceUnitNode = null;
 
                 serviceUnitNode = database.createNode();

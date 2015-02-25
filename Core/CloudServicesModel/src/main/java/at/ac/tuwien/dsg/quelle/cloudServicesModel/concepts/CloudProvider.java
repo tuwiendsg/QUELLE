@@ -32,15 +32,15 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "CloudProvider")
-public class CloudProvider extends Entity {
+public class CloudProvider extends Unit {
 
     @XmlElement(name = "ServiceUnit", required = false)
-    private List<ServiceUnit> serviceUnits;
+    private List<CloudOfferedService> serviceUnits;
     @XmlAttribute(name = "type", required = false)
     private String type = Type.IAAS;
 
     {
-        serviceUnits = new ArrayList<ServiceUnit>();
+        serviceUnits = new ArrayList<CloudOfferedService>();
     }
 
     public CloudProvider() {
@@ -55,7 +55,7 @@ public class CloudProvider extends Entity {
         this.type = type;
     }
 
-    public List<ServiceUnit> getServiceUnits() {
+    public List<CloudOfferedService> getCloudOfferedServices() {
         return serviceUnits;
     }
 
@@ -67,15 +67,15 @@ public class CloudProvider extends Entity {
         this.type = type;
     }
 
-    public void addServiceUnit(ServiceUnit u) {
+    public void addCloudOfferedService(CloudOfferedService u) {
         this.serviceUnits.add(u);
     }
 
-    public void removeServiceUnit(ServiceUnit u) {
+    public void removeCloudOfferedService(CloudOfferedService u) {
         this.serviceUnits.remove(u);
     }
 
-    public void setServiceUnits(List<ServiceUnit> serviceUnits) {
+    public void setCloudOfferedServices(List<CloudOfferedService> serviceUnits) {
         this.serviceUnits = serviceUnits;
     }
 
@@ -90,12 +90,12 @@ public class CloudProvider extends Entity {
         public static final String PAAS = "PAAS";
     }
 
-    public CloudProvider withServiceUnits(final List<ServiceUnit> serviceUnits) {
+    public CloudProvider withCloudOfferedServices(final List<CloudOfferedService> serviceUnits) {
         this.serviceUnits = serviceUnits;
         return this;
     }
 
-    public CloudProvider withServiceUnit(ServiceUnit serviceUnit) {
+    public CloudProvider withCloudOfferedService(CloudOfferedService serviceUnit) {
         this.serviceUnits.add(serviceUnit);
         return this;
     }

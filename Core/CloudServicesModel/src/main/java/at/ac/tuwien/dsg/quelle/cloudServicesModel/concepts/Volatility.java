@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "Volatility")
-public class Volatility extends Entity implements Cloneable {
+public class Volatility extends Unit implements Cloneable {
 
     @XmlAttribute(name = "minimumLifetimeInHours", required = true)
     private int minimumLifetimeInHours;

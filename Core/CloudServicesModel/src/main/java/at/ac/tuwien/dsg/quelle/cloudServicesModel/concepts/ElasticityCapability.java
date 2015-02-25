@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "ElasticityCapability")
-public class ElasticityCapability extends Entity {
+public class ElasticityCapability extends Unit {
 
     //dependency for which the characteristic is defined 
     @XmlElement(name = "Dependency", required = false)
@@ -85,8 +85,8 @@ public class ElasticityCapability extends Entity {
         dependencies.removeAll(e);
     }
 
-    public List<Entity> getOptionalDependencies() {
-        List<Entity> optionalDepenencies = new ArrayList<Entity>();
+    public List<Unit> getOptionalDependencies() {
+        List<Unit> optionalDepenencies = new ArrayList<Unit>();
         for (Dependency d : dependencies) {
             if (d.getDependencyType().equals(Type.OPTIONAL_ASSOCIATION)) {
                 optionalDepenencies.add(d.target);
@@ -96,8 +96,8 @@ public class ElasticityCapability extends Entity {
         return optionalDepenencies;
     }
 
-    public List<Entity> getMandatoryDependencies() {
-        List<Entity> optionalDepenencies = new ArrayList<Entity>();
+    public List<Unit> getMandatoryDependencies() {
+        List<Unit> optionalDepenencies = new ArrayList<Unit>();
         for (Dependency d : dependencies) {
             if (d.getDependencyType().equals(Type.MANDATORY_ASSOCIATION)) {
                 optionalDepenencies.add(d.target);
@@ -116,7 +116,7 @@ public class ElasticityCapability extends Entity {
         if (dependencies.isEmpty()) {
             return null;
         } else {
-            Entity target = dependencies.get(0).getTarget();
+            Unit target = dependencies.get(0).getTarget();
             return target.getClass();
         }
     }
@@ -169,7 +169,7 @@ public class ElasticityCapability extends Entity {
         //entity for which the characteristic is defined (Resource or Quality)
         //this is abstract: Example: Computing
         @XmlElement(name = "DependencyTarget", required = false)
-        private Entity target;
+        private Unit target;
 
         @XmlElement(name = "CapabilityTarget", required = false)
         private String dependencyType;
@@ -181,15 +181,15 @@ public class ElasticityCapability extends Entity {
             volatility = new Volatility();
         }
 
-        public Entity getTarget() {
+        public Unit getTarget() {
             return target;
         }
 
-        public void setTarget(Entity target) {
+        public void setTarget(Unit target) {
             this.target = target;
         }
 
-        public Dependency withTarget(Entity target) {
+        public Dependency withTarget(Unit target) {
             this.target = target;
             return this;
         }
@@ -227,7 +227,7 @@ public class ElasticityCapability extends Entity {
         public Dependency() {
         }
 
-        public Dependency(Entity target, String dependencyType) {
+        public Dependency(Unit target, String dependencyType) {
             this.target = target;
             this.dependencyType = dependencyType;
         }

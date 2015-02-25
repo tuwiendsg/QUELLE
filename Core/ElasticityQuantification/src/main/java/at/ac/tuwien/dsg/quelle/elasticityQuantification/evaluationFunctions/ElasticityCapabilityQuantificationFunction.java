@@ -19,7 +19,7 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class ElasticityCapabilityQuantificationFunction {
         elasticityDimensions.add(CostFunction.class);
         elasticityDimensions.add(Quality.class);
         elasticityDimensions.add(Resource.class);
-        elasticityDimensions.add(ServiceUnit.class);
+        elasticityDimensions.add(CloudOfferedService.class);
     }
 
     /**
@@ -48,7 +48,7 @@ public class ElasticityCapabilityQuantificationFunction {
      * @param dependencyEvalFunction
      * @return
      */
-    public static Double eval(ServiceUnit unit, Map<Class, Double> weights, ElasticityVolatilityEvalFunction volatilityEvalFunction,
+    public static Double eval(CloudOfferedService unit, Map<Class, Double> weights, ElasticityVolatilityEvalFunction volatilityEvalFunction,
             ElasticityPhaseEvalFunction elPhaseEvalFunction,
             ElasticityDependencyEvalFunction dependencyEvalFunction) {
 
@@ -66,7 +66,7 @@ public class ElasticityCapabilityQuantificationFunction {
 
     }
 
-    public static Double eval(ServiceUnit unit, Class dimension, ElasticityVolatilityEvalFunction volatilityEvalFunction,
+    public static Double eval(CloudOfferedService unit, Class dimension, ElasticityVolatilityEvalFunction volatilityEvalFunction,
             ElasticityPhaseEvalFunction elPhaseEvalFunction,
             ElasticityDependencyEvalFunction dependencyEvalFunction) {
 

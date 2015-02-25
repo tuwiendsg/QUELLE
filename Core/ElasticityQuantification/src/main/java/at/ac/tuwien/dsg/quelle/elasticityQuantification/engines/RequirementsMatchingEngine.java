@@ -18,10 +18,10 @@ package at.ac.tuwien.dsg.quelle.elasticityQuantification.engines;
 
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.requirements.RequirementsResolutionResult;
 import at.ac.tuwien.dsg.mela.common.monitoringConcepts.Metric;
@@ -62,11 +62,11 @@ public class RequirementsMatchingEngine {
      */
     public RequirementsResolutionResult analyzeMultiLevelRequirements(List<CloudProvider> cloudProviders, MultiLevelRequirements requirements) {
         //get all service units from the supplied cloud providers and search for match between them
-        List<ServiceUnit> serviceUnits = new ArrayList<ServiceUnit>();
+        List<CloudOfferedService> serviceUnits = new ArrayList<CloudOfferedService>();
         for (CloudProvider cloudProvider : cloudProviders) {
 //            CloudProvider retrieved = CloudProviderDAO.searchForCloudProvidersUniqueResult(cloudProvider);
             if (cloudProvider != null) {
-                serviceUnits.addAll(cloudProvider.getServiceUnits());
+                serviceUnits.addAll(cloudProvider.getCloudOfferedServices());
             } else {
                 log.warn("Retrieved CloudProvider " + cloudProvider + " has no units");
             }
@@ -79,7 +79,7 @@ public class RequirementsMatchingEngine {
             Collection<Requirements> requirementsGroups = multiLevelRequirements.getUnitRequirements();
 
             for (Requirements r : requirementsGroups) {
-                for (ServiceUnit serviceUnit : serviceUnits) {
+                for (CloudOfferedService serviceUnit : serviceUnits) {
                     ServiceUnitOptions option = analyzeServiceUnitMatching(serviceUnit, r);
                     if (option.getOverallMatched().size() > 0) {
                         requirementsResolutionResult.addMatchedOption(multiLevelRequirements, r, option);
@@ -106,7 +106,7 @@ public class RequirementsMatchingEngine {
      * @param requirements
      * @return
      */
-    public ServiceUnitOptions analyzeServiceUnitMatching(ServiceUnit unitToMatch, Requirements requirements) {
+    public ServiceUnitOptions analyzeServiceUnitMatching(CloudOfferedService unitToMatch, Requirements requirements) {
 
         //hold matched requirements by type
         Map<Metric.MetricType, List<Requirement>> matchedRequirementsMap = new EnumMap<Metric.MetricType, List<Requirement>>(Metric.MetricType.class);
@@ -245,8 +245,8 @@ public class RequirementsMatchingEngine {
         for (ElasticityCapability serviceUnitElasticityCapability : unitToMatch.getServiceUnitAssociations()) {
             Requirements r = new Requirements();
             r.setRequirements(serviceUnitOptions.getOverallUnMatched());
-            for (Entity entity : serviceUnitElasticityCapability.getMandatoryDependencies()) {
-                ServiceUnitOptions options = analyzeServiceUnitMatching((ServiceUnit) entity, r);
+            for (Unit entity : serviceUnitElasticityCapability.getMandatoryDependencies()) {
+                ServiceUnitOptions options = analyzeServiceUnitMatching((CloudOfferedService) entity, r);
                 if (options != null) {
                     serviceUnitOptions.addMandatoryServiceUnitRaport(options);
                 }
@@ -261,8 +261,8 @@ public class RequirementsMatchingEngine {
                 r.setRequirements(serviceUnitOptions.getOverallUnMatched());
                 //go and analyze each optional target from the elasticity stuff. not good though. I need to select one or the other? 
                 //TODO: structure reports after ElasticityCapabilities. Example: for capability A we have Reports for units B,C,D
-                for (Entity entity : optionalServiceUnitElasticityCapability.getOptionalDependencies()) {
-                    ServiceUnitOptions options = analyzeServiceUnitMatching((ServiceUnit) entity, r);
+                for (Unit entity : optionalServiceUnitElasticityCapability.getOptionalDependencies()) {
+                    ServiceUnitOptions options = analyzeServiceUnitMatching((CloudOfferedService) entity, r);
                     if (options != null) {
                         serviceUnitOptions.addOptionalServiceUnitRaport(options);
                     }
@@ -357,7 +357,7 @@ public class RequirementsMatchingEngine {
      * @param requirementsToMatch
      * @return
      */
-    private Set<RequirementsMatchingReport<Resource>> matchOptionalResourceConfiguration(List<Entity> optionalConfiguration, List<Requirement> requirementsToMatch) {
+    private Set<RequirementsMatchingReport<Resource>> matchOptionalResourceConfiguration(List<Unit> optionalConfiguration, List<Requirement> requirementsToMatch) {
         //the results will be sorted after the nr of matched stuff
         Set<RequirementsMatchingReport<Resource>> matchedReportSet = new TreeSet<RequirementsMatchingReport<Resource>>(new Comparator<RequirementsMatchingReport>() {
             public int compare(RequirementsMatchingReport o1, RequirementsMatchingReport o2) {
@@ -368,7 +368,7 @@ public class RequirementsMatchingEngine {
         });
 
         //1 go trough each optional Resource and match their requirements
-        for (Entity entity : optionalConfiguration) {
+        for (Unit entity : optionalConfiguration) {
             if (!(entity instanceof Resource)) {
                 continue;
             } else {
@@ -393,7 +393,7 @@ public class RequirementsMatchingEngine {
 
     }
 
-    private Set<RequirementsMatchingReport<Quality>> matchOptionalQualityConfiguration(List<Entity> optionalConfiguration, List<Requirement> requirementsToMatch) {
+    private Set<RequirementsMatchingReport<Quality>> matchOptionalQualityConfiguration(List<Unit> optionalConfiguration, List<Requirement> requirementsToMatch) {
         //the results will be sorted after the nr of matched stuff
         Set<RequirementsMatchingReport<Quality>> matchedReportSet = new TreeSet<RequirementsMatchingReport<Quality>>(new Comparator<RequirementsMatchingReport>() {
             public int compare(RequirementsMatchingReport o1, RequirementsMatchingReport o2) {
@@ -404,7 +404,7 @@ public class RequirementsMatchingEngine {
         });
 
         //1 go trough each optional Resource and match their requirements
-        for (Entity entity : optionalConfiguration) {
+        for (Unit entity : optionalConfiguration) {
             if (!(entity instanceof Quality)) {
                 continue;
             } else {

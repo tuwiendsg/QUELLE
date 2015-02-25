@@ -12,10 +12,10 @@ import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudProvider;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.requirements.MultiLevelRequirements;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.dtos.CloudServiceConfigurationRecommendation;
 import at.ac.tuwien.dsg.quelle.elasticityQuantification.engines.RequirementsMatchingEngine;
@@ -55,7 +55,7 @@ public class CloudServicesToWinery {
         File file = new File(outputPath);
         file.mkdir();
 
-        for (ServiceUnit service : provider.getServiceUnits()) {
+        for (CloudOfferedService service : provider.getCloudOfferedServices()) {
 //            switch(service.getCategory()){
 //                
 //            }
@@ -93,7 +93,7 @@ public class CloudServicesToWinery {
         }
     }
 
-    private void createNewNodeType(ServiceUnit service, String superClassName, String sourceIconName, String outputPath) {
+    private void createNewNodeType(CloudOfferedService service, String superClassName, String sourceIconName, String outputPath) {
 
         String storageName = service.getName().split("_")[0].replace(" ", "").replace("/", "").replace(" ", "");;
 
@@ -189,7 +189,7 @@ public class CloudServicesToWinery {
                     for (CostFunction costFunction : service.getCostFunctions()) {
 
                         //if cost no mather what
-                        if (costFunction.getAppliedInConjunctionWith().isEmpty()) {
+                        if (costFunction.getAppliedIfServiceInstanceUses().isEmpty()) {
 
                             for (CostElement element : costFunction.getCostElements()) {
                                 String entryName = element.getCostMetric().getName().replace("/", "").replace(" ", "");;
@@ -231,7 +231,7 @@ public class CloudServicesToWinery {
         }
     }
 
-    private void createNewNodeType(Entity entity, String outputPath) {
+    private void createNewNodeType(Unit entity, String outputPath) {
 
         String storageName = entity.getName().split("_")[0].replace(" ", "").replace("/", "").replace(" ", "");;;
         String sourceIconName = "";
@@ -247,8 +247,8 @@ public class CloudServicesToWinery {
             sourceIconName = "costIcon.png";
             superClassName = "Cost";
             //todo: 
-        } else if (entity instanceof ServiceUnit) {
-            ServiceUnit service = (ServiceUnit) entity;
+        } else if (entity instanceof CloudOfferedService) {
+            CloudOfferedService service = (CloudOfferedService) entity;
             switch (service.getSubcategory()) {
                 case "VM": {
 
@@ -564,7 +564,7 @@ public class CloudServicesToWinery {
      */
     private String toToscaTopologyTemplate(List<List<ServiceUnitConfigurationSolution>> configurationsList) {
         String tosca = "";
-        List<ServiceUnit> unitsIds = new ArrayList<>();
+        List<CloudOfferedService> unitsIds = new ArrayList<>();
 
         for (List<ServiceUnitConfigurationSolution> configurations : configurationsList) {
 
@@ -604,7 +604,7 @@ public class CloudServicesToWinery {
 
         //means we have unit requirements
         if (rootRequirements.getContainedElements().isEmpty()) {
-            List<ServiceUnit> unitsIds = new ArrayList<>();
+            List<CloudOfferedService> unitsIds = new ArrayList<>();
 
             for (Requirements requirements : solutions.get(rootRequirements).keySet()) {
 
@@ -636,13 +636,13 @@ public class CloudServicesToWinery {
                         + "            </tosca:RelationshipTemplate>";
             }
         } else {
-            List<ServiceUnit> unitsIds = new ArrayList<>();
+            List<CloudOfferedService> unitsIds = new ArrayList<>();
 
             for (MultiLevelRequirements levelRequirements : rootRequirements.getContainedElements()) {
                 tosca += toToscaTopologyTemplate(levelRequirements, solutions);
                 for (List<ServiceUnitConfigurationSolution> sols : solutions.get(rootRequirements).values()) {
                     for (ServiceUnitConfigurationSolution solution : sols) {
-                        if (solution.getServiceUnit().getCategory().equals(ServiceUnit.Category.IaaS)) {
+                        if (solution.getServiceUnit().getCategory().equals(CloudOfferedService.Category.IaaS)) {
                             unitsIds.add(solution.getServiceUnit());
                         }
                     }
@@ -799,7 +799,7 @@ private String toToscaTopologyTemplate(CloudServiceConfigurationRecommendation r
     }
 
     
-    private String createNodeTemplate(Entity entity) {
+    private String createNodeTemplate(Unit entity) {
 
         String nodeTypeName = entity.getName().split("_")[0].replace("/", "").replace(" ", "");
 
@@ -854,8 +854,8 @@ private String toToscaTopologyTemplate(CloudServiceConfigurationRecommendation r
 //            } else {
 //                return "";
             }
-        } else if (entity instanceof ServiceUnit) {
-            ServiceUnit service = (ServiceUnit) entity;
+        } else if (entity instanceof CloudOfferedService) {
+            CloudOfferedService service = (CloudOfferedService) entity;
             //if service unit, I need to set all values. Then, I need also to create for its dependencies the coresponding node templates
 
             switch (service.getSubcategory()) {
@@ -910,7 +910,7 @@ private String toToscaTopologyTemplate(CloudServiceConfigurationRecommendation r
             for (CostFunction costFunction : service.getCostFunctions()) {
 
                 //if cost no mather what
-                if (costFunction.getAppliedInConjunctionWith().isEmpty()) {
+                if (costFunction.getAppliedIfServiceInstanceUses().isEmpty()) {
 
                     for (CostElement element : costFunction.getCostElements()) {
                         String entryName = element.getCostMetric().getName().replace("/", "").replace(" ", "");;

@@ -24,10 +24,10 @@ import at.ac.tuwien.dsg.mela.common.monitoringConcepts.MetricValue;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostElement;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CostFunction;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ElasticityCapability;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Entity;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Unit;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Quality;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Resource;
-import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.ServiceUnit;
+import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.CloudOfferedService;
 import at.ac.tuwien.dsg.quelle.cloudServicesModel.concepts.Volatility;
 import static at.ac.tuwien.dsg.quelle.extensions.neo4jPersistenceAdapter.daos.CostElementDAO.log;
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public class CostFunctionDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getAppliedIfServiceInstanceUses().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
 
                 Relationship relationship = path.lastRelationship();
@@ -258,7 +258,7 @@ public class CostFunctionDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getAppliedIfServiceInstanceUses().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
                 costFunctions.add(costFunction);
             }
@@ -320,7 +320,7 @@ public class CostFunctionDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getAppliedIfServiceInstanceUses().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
                 resourceFound = costFunction;
 
@@ -376,7 +376,7 @@ public class CostFunctionDAO extends Neo4JDAO {
             }
 
             //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-            costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(id, database));
+            costFunction.getAppliedIfServiceInstanceUses().addAll(getAppliedInConjunctionWithEntities(id, database));
             costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(id, database));
             if (!transactionAllreadyRunning) {
                 tx.success();
@@ -392,9 +392,9 @@ public class CostFunctionDAO extends Neo4JDAO {
         return costFunction;
     }
 
-    public static List<Entity> getAppliedInConjunctionWithEntities(Long nodeID, EmbeddedGraphDatabase database) {
+    public static List<Unit> getAppliedInConjunctionWithEntities(Long nodeID, EmbeddedGraphDatabase database) {
 
-        List<Entity> entities = new ArrayList<Entity>();
+        List<Unit> entities = new ArrayList<Unit>();
 
         Node parentNode = null;
 
@@ -524,7 +524,7 @@ public class CostFunctionDAO extends Neo4JDAO {
                 }
 
                 //carefull. this can lead to infinite recursion (is still a graph. maybe improve later)
-                costFunction.getAppliedInConjunctionWith().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
+                costFunction.getAppliedIfServiceInstanceUses().addAll(getAppliedInConjunctionWithEntities(node.getId(), database));
                 //need to also retrieve Resurce and Quality
 
                 costFunction.getCostElements().addAll(CostElementDAO.getCostElementPropertiesForNode(node.getId(), database));
@@ -606,11 +606,11 @@ public class CostFunctionDAO extends Neo4JDAO {
             }
 
             //persist ServiceUnits for which cost is applied in conjunction with
-            for (Entity entity : resourceToPersist.getAppliedInConjunctionWith()) {
+            for (Unit entity : resourceToPersist.getAppliedIfServiceInstanceUses()) {
                 Node appliedInConjunctionWithNode = null;
-                if (entity instanceof ServiceUnit) {
-                    ServiceUnit serviceUnit = (ServiceUnit) entity;
-                    ServiceUnit appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                if (entity instanceof CloudOfferedService) {
+                    CloudOfferedService serviceUnit = (CloudOfferedService) entity;
+                    CloudOfferedService appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                     //costFunction does not exist need to persist it
                     if (appliedInConjunctionWith == null) {
                         appliedInConjunctionWithNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
@@ -727,11 +727,11 @@ public class CostFunctionDAO extends Neo4JDAO {
 
                 }
                 //persist ServiceUnits for which cost is applied in conjunction with
-                for (Entity entity : resourceToPersist.getAppliedInConjunctionWith()) {
+                for (Unit entity : resourceToPersist.getAppliedIfServiceInstanceUses()) {
                     Node appliedInConjunctionWithNode = null;
-                    if (entity instanceof ServiceUnit) {
-                        ServiceUnit serviceUnit = (ServiceUnit) entity;
-                        ServiceUnit appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
+                    if (entity instanceof CloudOfferedService) {
+                        CloudOfferedService serviceUnit = (CloudOfferedService) entity;
+                        CloudOfferedService appliedInConjunctionWith = ServiceUnitDAO.searchForCloudServiceUnitsUniqueResult(serviceUnit, database);
                         //costFunction does not exist need to persist it
                         if (appliedInConjunctionWith == null) {
                             appliedInConjunctionWithNode = ServiceUnitDAO.persistServiceUnit(serviceUnit, database);
