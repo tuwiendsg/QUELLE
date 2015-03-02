@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.simple.JSONArray;
@@ -38,24 +39,25 @@ import org.jsoup.select.Elements;
 import org.slf4j.LoggerFactory;
 
 /**
- * Note that Amazon continuously changes its website structure, and as I also parse here HTML, 
- * the code might not work on updated amazon website
- * 
+ * Note that Amazon continuously changes its website structure, and as I also
+ * parse here HTML, the code might not work on updated amazon website
+ *
  * !! Amazon changed its website, this code no longer works. Need to update
  *
  * @author Daniel Moldovan E-Mail: d.moldovan@dsg.tuwien.ac.at
  */
-public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
+public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser {
 
     static final org.slf4j.Logger log = LoggerFactory.getLogger(AmazonCloudJSONDescriptionParser.class);
 
     private String amazonInstanceTypesURL = "http://aws.amazon.com/ec2/instance-types/";
+    private String amazonPreviousInstanceTypesURL = "http://aws.amazon.com/ec2/previous-generation/";
     private String amazonInstancesReservedLightUtilizationCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-ri-light.min.js";
     private String amazonInstancesReservedMediumUtilizationCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-ri-medium.min.js";
     private String amazonInstancesReservedHeavyUtilizationCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-ri-heavy.min.js";
     private String amazonInstancesOndemandCostURL = "http://a0.awsstatic.com/pricing/1/ec2/linux-od.min.js";
     private String amazonInstancesSpotCostURL = "http://spot-price.s3.amazonaws.com/spot.js";
-    
+
     public CloudProvider getCloudProviderDescription() {
 
         //used to fast add cost properties
@@ -66,18 +68,23 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
         Map<String, List<ElasticityCapability.Dependency>> costDependencies = new HashMap<>();
 
         CloudProvider cloudProvider = new CloudProvider("Amazon EC2", CloudProvider.Type.IAAS);
-
+        
+        cloudProvider.withUuid(UUID.randomUUID());
+        
+        
         //other misc Amazon Services 
         {
             //create EBS instance
             CloudOfferedService ebsStorageUtility = new CloudOfferedService("IaaS", "Storage", "EBS");
+            ebsStorageUtility.withUuid(UUID.randomUUID());
+            
             cloudProvider.addCloudOfferedService(ebsStorageUtility);
             {
                 List<ElasticityCapability.Dependency> qualityCapabilityTargets = new ArrayList<>();
 
                 // utility quality
                 Quality stdQuality = new Quality("Standard I/O Performance");
-                Metric storageIOPS  = new Metric("Storage", "IOPS");
+                Metric storageIOPS = new Metric("Storage", "IOPS");
                 storageIOPS.setType(Metric.MetricType.QUALITY);
                 stdQuality.addProperty(storageIOPS, new MetricValue("100"));
                 qualityCapabilityTargets.add(new ElasticityCapability.Dependency(stdQuality, ElasticityCapability.Type.OPTIONAL_ASSOCIATION)
@@ -159,6 +166,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
             //Monitoring
             {
                 CloudOfferedService utility = new CloudOfferedService("MaaS", "Monitoring", "Monitoring");
+                utility.withUuid(UUID.randomUUID());
                 cloudProvider.addCloudOfferedService(utility);
 
                 List<ElasticityCapability.Dependency> qualityCapabilityTargets = new ArrayList<>();
@@ -228,6 +236,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
             //Amazon SQS 
             {
                 CloudOfferedService sqs = new CloudOfferedService("PaaS", "CommunicationServices", "SimpleQueue");
+                sqs.withUuid(UUID.randomUUID());
                 cloudProvider.addCloudOfferedService(sqs);
 
                 //utility quality
@@ -250,9 +259,10 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
             }
         }
 
+        //put old instance types
         try {
-            Document doc = Jsoup.connect(amazonInstanceTypesURL).get();
-            Elements tableElements = doc.select("div.aws-table*").first().getElementsByTag("table");
+            Document doc = Jsoup.connect(amazonPreviousInstanceTypesURL).get();
+            Elements tableElements = doc.select("div.aws-table*").get(5).getElementsByTag("table");
 
             Elements tableHeaderEles = tableElements.select("thead tr th");
             System.out.println("headers");
@@ -262,6 +272,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
             System.out.println();
 
             Elements tableRowElements = tableElements.select(":not(thead) tr");
+            Elements headers = tableRowElements.get(0).select("td");
 
             //at i = 0 is the HEADER of the table
             for (int i = 1; i < tableRowElements.size(); i++) {
@@ -279,9 +290,65 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
                     //do not know why, for large VMs amazon says 24 x 2,048 GB
                     value = value.replaceAll(",", "");
-                    builder.addProperty(builder.getPropertyNames().get(j), value);
+                    String propertyName = headers.get(j).text();
+                    if (builder.getPropertyNames().contains(propertyName)) {
+                        builder.addProperty(propertyName, value);
+                    } else {
+                        log.error("Property {} not found in property builder", propertyName);
+                    }
                 }
                 CloudOfferedService unit = builder.getUnit();
+                unit.withUuid(UUID.randomUUID());
+                cloudProvider.addCloudOfferedService(unit);
+                units.put(unit.getName(), unit);
+
+                System.out.println();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //put new instance types
+        try {
+            Document doc = Jsoup.connect(amazonInstanceTypesURL).get();
+            Elements tableElements = doc.select("div.aws-table*").get(8).getElementsByTag("table");
+
+            Elements tableHeaderEles = tableElements.select("thead tr th");
+            System.out.println("headers");
+            for (int i = 0; i < tableHeaderEles.size(); i++) {
+                System.out.println(tableHeaderEles.get(i).text());
+            }
+            System.out.println();
+
+            Elements tableRowElements = tableElements.select(":not(thead) tr");
+            Elements headers = tableRowElements.get(0).select("td");
+
+            //at i = 0 is the HEADER of the table
+            for (int i = 1; i < tableRowElements.size(); i++) {
+
+                //for each row we create another ServiceUnit
+                ServiceUnitBuilder builder = new ServiceUnitBuilder("IaaS", "VM");
+
+                Element row = tableRowElements.get(i);
+                System.out.println("row");
+
+                Elements rowItems = row.select("td");
+                for (int j = 0; j < rowItems.size(); j++) {
+                    //* marks notes, such as 1 *1 (note 1)
+                    String value = rowItems.get(j).text().split("\\*")[0];
+
+                    //do not know why, for large VMs amazon says 24 x 2,048 GB
+                    value = value.replaceAll(",", "");
+                    String propertyName = headers.get(j).text();
+                    if (builder.getPropertyNames().contains(propertyName)) {
+                        builder.addProperty(propertyName, value);
+                    } else {
+                        log.error("Property {} not found in property builder", propertyName);
+                    }
+                }
+                CloudOfferedService unit = builder.getUnit();
+                unit.withUuid(UUID.randomUUID());
                 cloudProvider.addCloudOfferedService(unit);
                 units.put(unit.getName(), unit);
 
@@ -439,39 +506,44 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 //                                Resource r = new Resource("ReservationPeriod");
 //                                r.addProperty(new Metric("Reservation", "duration"), new MetricValue("1 year"));
                                     String priceValue = ((JSONObject) price.get("prices")).get("USD").toString();
+                                    try {
+                                        Double convertedPriceValue = Double.parseDouble(priceValue);
+                                        switch (priceName) {
+                                            case "yrTerm1": {
+                                                CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
+                                                        CostElement.Type.PERIODIC);
+                                                upfrontCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                _1YearReservedCost.addCostElement(upfrontCost);
+                                            }
+                                            break;
+                                            case "yrTerm1Hourly": {
+                                                CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "$", Metric.MetricType.COST), CostElement.Type.PERIODIC);
+                                                hourlyCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                _1YearReservedCost.addCostElement(hourlyCost);
+                                            }
+                                            break;
 
-                                    switch (priceName) {
-                                        case "yrTerm1": {
-                                            CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
-                                                    CostElement.Type.PERIODIC);
-                                            upfrontCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
-                                            _1YearReservedCost.addCostElement(upfrontCost);
-                                        }
-                                        break;
-                                        case "yrTerm1Hourly": {
-                                            CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "$", Metric.MetricType.COST), CostElement.Type.PERIODIC);
-                                            hourlyCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
-                                            _1YearReservedCost.addCostElement(hourlyCost);
-                                        }
-                                        break;
+                                            case "yrTerm3": {
+                                                CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
+                                                        CostElement.Type.PERIODIC);
+                                                upfrontCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                _3YearReservedCost.addCostElement(upfrontCost);
+                                            }
+                                            break;
+                                            case "yrTerm3Hourly": {
+                                                CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "$", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
+                                                hourlyCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                _3YearReservedCost.addCostElement(hourlyCost);
+                                            }
+                                            break;
 
-                                        case "yrTerm3": {
-                                            CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
-                                                    CostElement.Type.PERIODIC);
-                                            upfrontCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
-                                            _3YearReservedCost.addCostElement(upfrontCost);
                                         }
-                                        break;
-                                        case "yrTerm3Hourly": {
-                                            CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "$", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                                            hourlyCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
-                                            _3YearReservedCost.addCostElement(hourlyCost);
-                                        }
-                                        break;
-
+                                    } catch (java.lang.NumberFormatException exception) {
+                                        log.error(exception.getMessage(), exception);
+                                        exception.printStackTrace();;
                                     }
-                                }
 
+                                }
                             }
 
                         }
@@ -703,7 +775,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
             propertyNames.add("Instance Type");
             propertyNames.add("Processor Arch");
             propertyNames.add("vCPU");
-            propertyNames.add("ECU");
+//            propertyNames.add("ECU");
             propertyNames.add("Memory (GiB)");
             propertyNames.add("Instance Storage (GB)");
             propertyNames.add("EBS-optimized Available");
@@ -802,7 +874,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser{
 
                     switch (info[0].trim()) {
 
-                        case "EBS only":
+                        case "EBS Only":
                             ebsOnly = true;
                             diskResource.addProperty(new Metric("StorageDisks", "no."), new MetricValue(0));
                             break;
