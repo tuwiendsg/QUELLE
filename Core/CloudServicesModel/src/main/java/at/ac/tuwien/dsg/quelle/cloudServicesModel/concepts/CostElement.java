@@ -115,7 +115,8 @@ public class CostElement extends Unit implements Comparable<CostElement> {
 
     public void setCostMetric(Metric costMetric) {
         this.costMetric = costMetric;
-        this.costMetric.setType(Metric.MetricType.COST);
+//        this was not commented, which started triggering problems with cost composition
+//        this.costMetric.setType(Metric.MetricType.COST);
     }
 
     public List<MetricValue> getCostIntervalsInAscendingOrder() {

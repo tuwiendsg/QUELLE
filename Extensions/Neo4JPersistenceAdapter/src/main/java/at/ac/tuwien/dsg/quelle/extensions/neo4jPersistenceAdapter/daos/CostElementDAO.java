@@ -59,9 +59,13 @@ public class CostElementDAO extends Neo4JDAO {
         }
     };
     public static final String KEY = "name";
-    public static final String METRIC = "metric";
+    // replace this shit with 
+    // public static final String METRIC = "metric";
+    public static final String COST_METRIC_NAME = "cost_metric_name";
+    public static final String COST_METRIC_UNIT = "cost_metric_unit";
+    public static final String COST_METRIC_TYPE = "cost_metric_type";
+
     public static final String TYPE = "type";
-    public static final String PROPERTY_SEPARATOR = ":";
     public static final String UUID = "uuid";
 
     private CostElementDAO() {
@@ -108,18 +112,16 @@ public class CostElementDAO extends Neo4JDAO {
                     log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
                 }
 
-                if (node.hasProperty(METRIC)) {
-                    String propertyKey = node.getProperty(METRIC).toString();
-                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                    if (metricInfo.length < 2) {
-                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                    } else {
-                        Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                        costElement.setCostMetric(metric);
-                    }
+                if (node.hasProperty(COST_METRIC_NAME)) {
+                    String costMetricName = node.getProperty(COST_METRIC_NAME).toString();
+                    String costMetricUnit = node.getProperty(COST_METRIC_UNIT).toString();
+                    String costMetricType = node.getProperty(COST_METRIC_TYPE).toString();
+
+                    Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                    costElement.setCostMetric(metric);
 
                 } else {
-                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + COST_METRIC_NAME);
                 }
 
 //                //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -203,18 +205,16 @@ public class CostElementDAO extends Neo4JDAO {
                     log.warn("Retrieved CostFunction " + costElement + " has no " + TYPE);
                 }
 
-                if (node.hasProperty(METRIC)) {
-                    String propertyKey = node.getProperty(METRIC).toString();
-                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                    if (metricInfo.length < 2) {
-                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                    } else {
-                        Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                        costElement.setCostMetric(metric);
-                    }
+                if (node.hasProperty(COST_METRIC_NAME)) {
+                    String costMetricName = node.getProperty(COST_METRIC_NAME).toString();
+                    String costMetricUnit = node.getProperty(COST_METRIC_UNIT).toString();
+                    String costMetricType = node.getProperty(COST_METRIC_TYPE).toString();
+
+                    Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                    costElement.setCostMetric(metric);
 
                 } else {
-                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + resourceToSearchFor + " has no " + COST_METRIC_NAME);
                 }
 
 //                //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -313,18 +313,16 @@ public class CostElementDAO extends Neo4JDAO {
                     log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
                 }
 
-                if (node.hasProperty(METRIC)) {
-                    String propertyKey = node.getProperty(METRIC).toString();
-                    String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                    if (metricInfo.length < 2) {
-                        log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                    } else {
-                        Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                        costElement.setCostMetric(metric);
-                    }
+                if (node.hasProperty(COST_METRIC_NAME)) {
+                    String costMetricName = node.getProperty(COST_METRIC_NAME).toString();
+                    String costMetricUnit = node.getProperty(COST_METRIC_UNIT).toString();
+                    String costMetricType = node.getProperty(COST_METRIC_TYPE).toString();
+
+                    Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                    costElement.setCostMetric(metric);
 
                 } else {
-                    log.warn("Retrieved CostElement " + nodeID + " has no " + METRIC);
+                    log.warn("Retrieved CostElement " + nodeID + " has no " + COST_METRIC_NAME);
                 }
 
                 //get properties from the RELATIONSHIP
@@ -434,19 +432,16 @@ public class CostElementDAO extends Neo4JDAO {
                 log.warn("Retrieved CloudProvider " + costElement + " has no " + UUID);
             }
 
-            if (node.hasProperty(METRIC)) {
-                String propertyKey = node.getProperty(METRIC).toString();
-                String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                if (metricInfo.length < 2) {
-                    log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                } else {
-                    Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                    Double cost = Double.parseDouble(metricInfo[1]);
-                    costElement.setCostMetric(metric);
-                }
+            if (node.hasProperty(COST_METRIC_NAME)) {
+                String costMetricName = node.getProperty(COST_METRIC_NAME).toString();
+                String costMetricUnit = node.getProperty(COST_METRIC_UNIT).toString();
+                String costMetricType = node.getProperty(COST_METRIC_TYPE).toString();
+
+                Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                costElement.setCostMetric(metric);
 
             } else {
-                log.warn("Retrieved CostElement " + id + " has no " + METRIC);
+                log.warn("Retrieved CostElement " + node + " has no " + COST_METRIC_NAME);
             }
 
 //            //the format assumed for each property of a CostElement is "property key =" metricName : metricValue " (separated by :), 
@@ -503,7 +498,9 @@ public class CostElementDAO extends Neo4JDAO {
         try {
             resourceNode = database.createNode();
             resourceNode.setProperty(KEY, entityToPersist.getName());
-            resourceNode.setProperty(METRIC, entityToPersist.getCostMetric().getName() + PROPERTY_SEPARATOR + entityToPersist.getCostMetric().getMeasurementUnit());
+            resourceNode.setProperty(COST_METRIC_NAME, entityToPersist.getCostMetric().getName());
+            resourceNode.setProperty(COST_METRIC_TYPE, entityToPersist.getCostMetric().getType().toString());
+            resourceNode.setProperty(COST_METRIC_UNIT, entityToPersist.getCostMetric().getMeasurementUnit());
             resourceNode.setProperty(TYPE, entityToPersist.getType());
             resourceNode.setProperty(UUID, entityToPersist.getUuid().toString());
             resourceNode.addLabel(LABEL);
@@ -547,7 +544,9 @@ public class CostElementDAO extends Neo4JDAO {
             for (CostElement entityToPersist : resourcesToPersist) {
                 Node resourceNode = database.createNode();
                 resourceNode.setProperty(KEY, entityToPersist.getName());
-                resourceNode.setProperty(METRIC, entityToPersist.getCostMetric().getName() + PROPERTY_SEPARATOR + entityToPersist.getCostMetric().getMeasurementUnit());
+                resourceNode.setProperty(COST_METRIC_NAME, entityToPersist.getCostMetric().getName());
+                resourceNode.setProperty(COST_METRIC_TYPE, entityToPersist.getCostMetric().getType().toString());
+                resourceNode.setProperty(COST_METRIC_UNIT, entityToPersist.getCostMetric().getMeasurementUnit());
                 resourceNode.setProperty(TYPE, entityToPersist.getType());
                 resourceNode.setProperty(UUID, entityToPersist.getUuid().toString());
                 resourceNode.addLabel(LABEL);

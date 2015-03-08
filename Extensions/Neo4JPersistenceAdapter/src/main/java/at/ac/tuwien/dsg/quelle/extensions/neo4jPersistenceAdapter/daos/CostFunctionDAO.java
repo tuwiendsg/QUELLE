@@ -68,7 +68,12 @@ public class CostFunctionDAO extends Neo4JDAO {
     };
     public static final String KEY = "name";
     //separates metricName from metricUnit in property name
-    public static final String PROPERTY_SEPARATOR = ":";
+//    public static final String PROPERTY_SEPARATOR = ":";
+
+    public static final String COST_METRIC_NAME = "cost_metric_name";
+    public static final String COST_METRIC_UNIT = "cost_metric_unit";
+    public static final String COST_METRIC_TYPE = "cost_metric_type";
+    public static final String COST_METRIC_VALUE = "cost_metric_value";
 
     public static final String UUID = "uuid";
 
@@ -431,36 +436,31 @@ public class CostFunctionDAO extends Neo4JDAO {
 
                     Resource resource = ResourceDAO.getByID(lastPathNode.getId(), database);
 
-                    //extratc proeprties from relationships
+                    //extract properties from relationships
                     Relationship relationship = path.lastRelationship();
-                    for (String propertyKey : relationship.getPropertyKeys()) {
-                        String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                        if (metricInfo.length < 2) {
-                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                        } else {
-                            Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                            MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
-                            resource.addProperty(metric, metricValue);
-                        }
+                    String costMetricName = relationship.getProperty(COST_METRIC_NAME).toString();
+                    String costMetricUnit = relationship.getProperty(COST_METRIC_UNIT).toString();
+                    String costMetricType = relationship.getProperty(COST_METRIC_TYPE).toString();
+                    String costMetricValue = relationship.getProperty(COST_METRIC_VALUE).toString();
 
-                    }
+                    Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                    MetricValue metricValue = new MetricValue(costMetricValue);
+                    resource.addProperty(metric, metricValue);
+
                     entities.add(resource);
                 } else if (lastPathNode.hasLabel(QualityDAO.LABEL)) {
                     Quality quality = QualityDAO.getByID(lastPathNode.getId(), database);
 
                     //extratc proeprties from relationships
                     Relationship relationship = path.lastRelationship();
-                    for (String propertyKey : relationship.getPropertyKeys()) {
-                        String[] metricInfo = propertyKey.split(PROPERTY_SEPARATOR);
-                        if (metricInfo.length < 2) {
-                            log.warn("Retrieved property " + propertyKey + " does not respect format metricName:metricUnit");
-                        } else {
-                            Metric metric = new Metric(metricInfo[0], metricInfo[1]);
-                            MetricValue metricValue = new MetricValue(relationship.getProperty(propertyKey));
-                            quality.addProperty(metric, metricValue);
-                        }
+                    String costMetricName = relationship.getProperty(COST_METRIC_NAME).toString();
+                    String costMetricUnit = relationship.getProperty(COST_METRIC_UNIT).toString();
+                    String costMetricType = relationship.getProperty(COST_METRIC_TYPE).toString();
+                    String costMetricValue = relationship.getProperty(COST_METRIC_VALUE).toString();
 
-                    }
+                    Metric metric = new Metric(costMetricName, costMetricUnit, Metric.MetricType.valueOf(costMetricType));
+                    MetricValue metricValue = new MetricValue(costMetricValue);
+                    quality.addProperty(metric, metricValue);
                     entities.add(quality);
                 }
             }
@@ -637,8 +637,11 @@ public class CostFunctionDAO extends Neo4JDAO {
                     //here I need to insert on the relationship the unit's properties
                     for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
                         Metric metric = entry.getKey();
-                        String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                        relationship.setProperty(propertyKey, entry.getValue().getValue());
+                        relationship.setProperty(COST_METRIC_NAME, metric.getName());
+                        relationship.setProperty(COST_METRIC_UNIT, metric.getMeasurementUnit());
+                        relationship.setProperty(COST_METRIC_TYPE, metric.getType().toString());
+                        relationship.setProperty(COST_METRIC_VALUE, entry.getValue().toString());
+
                     }
                 } else if (entity instanceof Quality) {
                     Quality quality = (Quality) entity;
@@ -655,8 +658,10 @@ public class CostFunctionDAO extends Neo4JDAO {
                     //here I need to insert on the relationship the unit's properties
                     for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
                         Metric metric = entry.getKey();
-                        String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                        relationship.setProperty(propertyKey, entry.getValue().getValue());
+                        relationship.setProperty(COST_METRIC_NAME, metric.getName());
+                        relationship.setProperty(COST_METRIC_UNIT, metric.getMeasurementUnit());
+                        relationship.setProperty(COST_METRIC_TYPE, metric.getType().toString());
+                        relationship.setProperty(COST_METRIC_VALUE, entry.getValue().toString());
                     }
                 }
 
@@ -758,8 +763,10 @@ public class CostFunctionDAO extends Neo4JDAO {
                         //here I need to insert on the relationship the unit's properties
                         for (Map.Entry<Metric, MetricValue> entry : resource.getProperties().entrySet()) {
                             Metric metric = entry.getKey();
-                            String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                            relationship.setProperty(propertyKey, entry.getValue().getValue());
+                            relationship.setProperty(COST_METRIC_NAME, metric.getName());
+                            relationship.setProperty(COST_METRIC_UNIT, metric.getMeasurementUnit());
+                            relationship.setProperty(COST_METRIC_TYPE, metric.getType().toString());
+                            relationship.setProperty(COST_METRIC_VALUE, entry.getValue().toString());
                         }
                     } else if (entity instanceof Quality) {
                         Quality quality = (Quality) entity;
@@ -776,8 +783,10 @@ public class CostFunctionDAO extends Neo4JDAO {
                         //here I need to insert on the relationship the unit's properties
                         for (Map.Entry<Metric, MetricValue> entry : quality.getProperties().entrySet()) {
                             Metric metric = entry.getKey();
-                            String propertyKey = metric.getName() + PROPERTY_SEPARATOR + metric.getMeasurementUnit();
-                            relationship.setProperty(propertyKey, entry.getValue().getValue());
+                            relationship.setProperty(COST_METRIC_NAME, metric.getName());
+                            relationship.setProperty(COST_METRIC_UNIT, metric.getMeasurementUnit());
+                            relationship.setProperty(COST_METRIC_TYPE, metric.getType().toString());
+                            relationship.setProperty(COST_METRIC_VALUE, entry.getValue().toString());
                         }
                     }
 

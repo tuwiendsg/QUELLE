@@ -354,7 +354,7 @@ public class CloudOfferedService extends Unit {
         this.elasticityCapabilities.add(elasticityCapability);
         return this;
     }
-
+ 
     @Override
     public CloudOfferedService withName(String name) {
         super.withName(name);
@@ -367,4 +367,4 @@ public class CloudOfferedService extends Unit {
         return this;
     }
 
-}
+    }

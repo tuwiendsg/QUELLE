@@ -37,7 +37,7 @@ public class Unit implements Serializable {
     @XmlAttribute(name = "id")
     protected Long id;
 
-    @XmlAttribute(name = "uuid", required = false)
+    @XmlAttribute(name = "uuid" )
     protected UUID uuid;
 
     @XmlAttribute(name = "name")
