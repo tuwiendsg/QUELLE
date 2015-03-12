@@ -128,7 +128,6 @@ public class CostElement extends Unit implements Comparable<CostElement> {
         });
 
         return keys;
-
     }
 
     public Map<MetricValue, Double> getCostIntervalFunction() {
