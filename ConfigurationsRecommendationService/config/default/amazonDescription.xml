@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<CloudProvider type="IAAS" name="Amazon EC2">
+<CloudProvider type="IAAS" name="AmazonEC2">
     <ServiceUnit subcategory="Storage" category="IaaS" name="EBS">
         <ElasticityCapability elasticityPhase="InstantiationTime" name="Quality">
             <Dependency>
