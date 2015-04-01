@@ -222,7 +222,7 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.24);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.24);
                         onDemandCost.addCostElement(hourlyCost);
                     }
                     onDemandCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -239,7 +239,7 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.026);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.026);
                         spotCost.addCostElement(hourlyCost);
                     }
                     spotCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -256,13 +256,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 243.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 243.0);
                         _1YearReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.13);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.13);
                         _1YearReservedCost.addCostElement(hourlyCost);
                     }
                     _1YearReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -279,13 +279,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 554.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 554.0);
                         _1YearReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.13);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.13);
                         _1YearReservedCost.addCostElement(hourlyCost);
                     }
                     _1YearReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -299,13 +299,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 676.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 676.0);
                         _1YearReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.056);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.056);
                         _1YearReservedCost.addCostElement(hourlyCost);
                     }
                     _1YearReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -322,13 +322,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 384.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 384.0);
                         _2YearsReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.108);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.108);
                         _2YearsReservedCost.addCostElement(hourlyCost);
                     }
                     _2YearsReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -343,13 +343,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 860.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 860.0);
                         _2YearsReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.064);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.064);
                         _2YearsReservedCost.addCostElement(hourlyCost);
                     }
                     _2YearsReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);
@@ -364,13 +364,13 @@ public class CloudProviderDAOTest extends TestCase {
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        upfrontCost.addCostInterval(new MetricValue(1), 1028.0);
+                        upfrontCost.addBillingInterval(new MetricValue(1), 1028.0);
                         _2YearsReservedCost.addCostElement(upfrontCost);
                     }
                     {
                         //currently Cost is cost unit agnostic?
                         CostElement hourlyCost = new CostElement("HourlyCost", new Metric("hourlyUsage", "hour", Metric.MetricType.RESOURCE), CostElement.Type.PERIODIC);
-                        hourlyCost.addCostInterval(new MetricValue(1), 0.046);
+                        hourlyCost.addBillingInterval(new MetricValue(1), 0.046);
                         _2YearsReservedCost.addCostElement(hourlyCost);
                     }
                     _2YearsReservedCost.addAppliedIfServiceInstanceUses(reservationScheme);

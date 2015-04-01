@@ -118,15 +118,15 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                 {
                     // currently Cost is cost unit agnostic?
                     CostElement costPerGB = new CostElement("StorageCost", new Metric("diskSize", "GB", Metric.MetricType.COST), CostElement.Type.USAGE)
-                            .withBillingPeriod(CostElement.BillingPeriod.HOUR);
+                            .withBillingCycle(CostElement.BillingCycle.HOUR);
                     //convert from month to hour
-                    costPerGB.addCostInterval(new MetricValue(1), 0.1 / 30 / 24);
+                    costPerGB.addBillingInterval(new MetricValue(1), 0.1 / 30 / 24);
                     costFunctionForStdPerformance.addCostElement(costPerGB);
                 }
                 
                 {
                     CostElement costPerIO = new CostElement("I/OCost", new Metric("diskIOCount", "#", Metric.MetricType.COST), CostElement.Type.USAGE);
-                    costPerIO.addCostInterval(new MetricValue(1), 0.1);
+                    costPerIO.addBillingInterval(new MetricValue(1), 0.1);
                     costFunctionForStdPerformance.addCostElement(costPerIO);
                 }
                 costFunctionForStdPerformance.addAppliedIfServiceInstanceUses(stdQuality);
@@ -137,14 +137,14 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                         .withVolatility(new Volatility(1, 1)));
                 {
                     // currently Cost is cost unit agnostic?
-                    CostElement costPerGB = new CostElement("StorageCost", new Metric("diskSize", "GB", Metric.MetricType.COST), CostElement.Type.USAGE).withBillingPeriod(CostElement.BillingPeriod.HOUR);
-                    costPerGB.addCostInterval(new MetricValue(1), 0.125 / 30 / 24);
+                    CostElement costPerGB = new CostElement("StorageCost", new Metric("diskSize", "GB", Metric.MetricType.COST), CostElement.Type.USAGE).withBillingCycle(CostElement.BillingCycle.HOUR);
+                    costPerGB.addBillingInterval(new MetricValue(1), 0.125 / 30 / 24);
                     costFunctionForMaxPerformance.addCostElement(costPerGB);
                 }
                 
                 {
                     CostElement costPerIO = new CostElement("I/OCost", new Metric("diskIOCount", "#", Metric.MetricType.COST), CostElement.Type.USAGE);
-                    costPerIO.addCostInterval(new MetricValue(1), 0.1);
+                    costPerIO.addBillingInterval(new MetricValue(1), 0.1);
                     costFunctionForMaxPerformance.addCostElement(costPerIO);
                 }
                 costFunctionForMaxPerformance.addAppliedIfServiceInstanceUses(highQuality);
@@ -202,7 +202,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                 {
                     //currently Cost is cost unit agnostic?
                     CostElement monCost = new CostElement("MonitoringCost", new Metric("monitoringCost", "$/hour", Metric.MetricType.COST), CostElement.Type.USAGE);
-                    monCost.addCostInterval(new MetricValue(1), 0.0);
+                    monCost.addBillingInterval(new MetricValue(1), 0.0);
                     costFunctionForStdMonitoring.addCostElement(monCost);
                     costFunctionForStdMonitoring.addAppliedIfServiceInstanceUses(stdQuality);
                     costCapabilityTargets.add(new ElasticityCapability.Dependency(costFunctionForStdMonitoring, ElasticityCapability.Type.OPTIONAL_ASSOCIATION)
@@ -212,7 +212,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                 CostFunction costFunctionForCustomMonitoring = new CostFunction("HighMonitoringFreqCost");
                 {
                     CostElement monCost = new CostElement("MonitoringCost", new Metric("monitoringCost", "$/month", Metric.MetricType.COST), CostElement.Type.USAGE);
-                    monCost.addCostInterval(new MetricValue(1), 3.5);
+                    monCost.addBillingInterval(new MetricValue(1), 3.5);
                     costFunctionForCustomMonitoring.addCostElement(monCost);
                     costFunctionForCustomMonitoring.addAppliedIfServiceInstanceUses(higherQuality);
                     costCapabilityTargets.add(new ElasticityCapability.Dependency(costFunctionForCustomMonitoring, ElasticityCapability.Type.OPTIONAL_ASSOCIATION)
@@ -251,7 +251,7 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                     //currently Cost is cost unit agnostic?
                     {
                         CostElement d = new CostElement("MessagingCost", new Metric("messages", "#", Metric.MetricType.COST), CostElement.Type.USAGE);
-                        d.addCostInterval(new MetricValue(1), 0.5);
+                        d.addBillingInterval(new MetricValue(1), 0.5);
                         messagingCost.addCostElement(d);
                     }
                 }
@@ -513,14 +513,14 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                                             case "yrTerm1": {
                                                 CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
                                                         CostElement.Type.PERIODIC);
-                                                upfrontCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                upfrontCost.addBillingInterval(new MetricValue(1), convertedPriceValue);
                                                 _1YearReservedCost.addCostElement(upfrontCost);
                                             }
                                             break;
                                             case "yrTerm1Hourly": {
                                                 CostElement hourlyCost = new CostElement("vmCost", new Metric("instance", "#", Metric.MetricType.COST),
-                                                        CostElement.Type.PERIODIC).withBillingPeriod(CostElement.BillingPeriod.HOUR);
-                                                hourlyCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                        CostElement.Type.PERIODIC).withBillingCycle(CostElement.BillingCycle.HOUR);
+                                                hourlyCost.addBillingInterval(new MetricValue(1), convertedPriceValue);
                                                 _1YearReservedCost.addCostElement(hourlyCost);
                                             }
                                             break;
@@ -528,14 +528,14 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                                             case "yrTerm3": {
                                                 CostElement upfrontCost = new CostElement("UpfrontCost", new Metric("OneTimePay", "value", Metric.MetricType.COST),
                                                         CostElement.Type.PERIODIC);
-                                                upfrontCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                upfrontCost.addBillingInterval(new MetricValue(1), convertedPriceValue);
                                                 _3YearReservedCost.addCostElement(upfrontCost);
                                             }
                                             break;
                                             case "yrTerm3Hourly": {
                                                 CostElement hourlyCost = new CostElement("vmCost", new Metric("instance", "#", Metric.MetricType.COST),
-                                                        CostElement.Type.PERIODIC).withBillingPeriod(CostElement.BillingPeriod.HOUR);
-                                                hourlyCost.addCostInterval(new MetricValue(1), convertedPriceValue);
+                                                        CostElement.Type.PERIODIC).withBillingCycle(CostElement.BillingCycle.HOUR);
+                                                hourlyCost.addBillingInterval(new MetricValue(1), convertedPriceValue);
                                                 _3YearReservedCost.addCostElement(hourlyCost);
                                             }
                                             break;
@@ -640,9 +640,9 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                                     String priceValue = ((JSONObject) price.get("prices")).get("USD").toString();
                                     
                                     CostElement hourlyCost = new CostElement("vmCost", new Metric("instance", "#", Metric.MetricType.COST),
-                                            CostElement.Type.PERIODIC).withBillingPeriod(CostElement.BillingPeriod.HOUR);
+                                            CostElement.Type.PERIODIC).withBillingCycle(CostElement.BillingCycle.HOUR);
                                     
-                                    hourlyCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
+                                    hourlyCost.addBillingInterval(new MetricValue(1), Double.parseDouble(priceValue));
                                     onDemand.addCostElement(hourlyCost);
                                     
                                 }
@@ -736,8 +736,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                                             {
                                                 // currently Cost is cost unit agnostic?
                                                 CostElement hourlyCost = new CostElement("vmCost", new Metric("instance", "#", Metric.MetricType.COST),
-                                                        CostElement.Type.PERIODIC).withBillingPeriod(CostElement.BillingPeriod.HOUR);
-                                                hourlyCost.addCostInterval(new MetricValue(1), Double.parseDouble(priceValue));
+                                                        CostElement.Type.PERIODIC).withBillingCycle(CostElement.BillingCycle.HOUR);
+                                                hourlyCost.addBillingInterval(new MetricValue(1), Double.parseDouble(priceValue));
                                                 spot.addCostElement(hourlyCost);
                                             }
 //                                            spot.addUtilityAppliedInConjunctionWith(reservationScheme);
@@ -946,8 +946,8 @@ public class AmazonCloudJSONDescriptionParser implements CloudDescriptionParser 
                                 {
                                     // currently Cost is cost unit agnostic?
                                     CostElement hourlyCost = new CostElement("vmCost", new Metric("instance", "#", Metric.MetricType.COST),
-                                            CostElement.Type.PERIODIC).withBillingPeriod(CostElement.BillingPeriod.HOUR);
-                                    hourlyCost.addCostInterval(new MetricValue(1), 0.025);
+                                            CostElement.Type.PERIODIC).withBillingCycle(CostElement.BillingCycle.HOUR);
+                                    hourlyCost.addBillingInterval(new MetricValue(1), 0.025);
                                     onDemandCost.addCostElement(hourlyCost);
                                     onDemandCost.addAppliedIfServiceInstanceUses(q);
                                 }

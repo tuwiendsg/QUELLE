@@ -85,7 +85,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
 
     }
 
-    public CostElement(String name, Metric costMetric, BillingPeriod billingPeriod, String type) {
+    public CostElement(String name, Metric costMetric, BillingCycle billingPeriod, String type) {
         super(name);
         this.type = type;
         this.costMetric = costMetric;
@@ -101,11 +101,11 @@ public class CostElement extends Unit implements Comparable<CostElement> {
         this.type = type;
     }
 
-    public void addCostInterval(MetricValue metricValue, Double cost) {
+    public void addBillingInterval(MetricValue metricValue, Double cost) {
         costIntervalFunction.put(metricValue, cost);
     }
 
-    public void removeCostInterval(MetricValue metricValue) {
+    public void removeBillingInterval(MetricValue metricValue) {
         costIntervalFunction.remove(metricValue);
     }
 
@@ -211,7 +211,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlRootElement(name = "Metric")
     @XmlEnum
-    public enum BillingPeriod implements Serializable {
+    public enum BillingCycle implements Serializable {
 
         @XmlEnumValue("s")
         SECOND("s"),
@@ -225,7 +225,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
 
         private String representation;
 
-        private BillingPeriod(String representation) {
+        private BillingCycle(String representation) {
             this.representation = representation;
         }
 
@@ -234,7 +234,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
             return representation;
         }
 
-        public BillingPeriod fromString(String representation) {
+        public BillingCycle fromString(String representation) {
             if (representation.equals("s")) {
                 return SECOND;
             } else if (representation.equals("m")) {
@@ -261,7 +261,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
         return this;
     }
 
-    public CostElement withBillingPeriod(final BillingPeriod billingPeriod) {
+    public CostElement withBillingCycle(final BillingCycle billingPeriod) {
         this.costMetric.setMeasurementUnit(this.costMetric.getMeasurementUnit() + "/" + billingPeriod.toString());
         return this;
     }
@@ -271,7 +271,7 @@ public class CostElement extends Unit implements Comparable<CostElement> {
         return this;
     }
 
-    public CostElement withCostInterval(final MetricValue intervalUpperBound, Double value) {
+    public CostElement withBillingInterval(final MetricValue intervalUpperBound, Double value) {
         this.costIntervalFunction.put(intervalUpperBound, value);
         return this;
     }

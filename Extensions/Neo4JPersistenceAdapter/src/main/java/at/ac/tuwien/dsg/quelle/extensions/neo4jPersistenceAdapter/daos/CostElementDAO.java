@@ -354,7 +354,7 @@ public class CostElementDAO extends Neo4JDAO {
 
                         MetricValue metricValue = new MetricValue(propertyKeyValue);
                         Double cost = (Double) relationship.getProperty(propertyKey);
-                        costElement.addCostInterval(metricValue, cost);
+                        costElement.addBillingInterval(metricValue, cost);
                     }
                 } else {
                     log.warn("No relationship found of type " + ServiceUnitRelationship.hasResource + " starting from " + parentNode + " and ending at " + node);
