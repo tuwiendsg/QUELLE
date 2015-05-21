@@ -43,8 +43,19 @@ public class CloudFileDescriptionParser implements CloudDescriptionParser {
         } catch (Exception ex) {
             log.error("Cannot unmarshall : {}", ex.getMessage());
             ex.printStackTrace();
-            System.exit(1);
-            return null;
+            return new CloudProvider("empty");
+        }
+    }
+
+    public CloudProvider getCloudProviderDescription(String descriptionFile) {
+        try {
+            JAXBContext jAXBContext = JAXBContext.newInstance(CloudProvider.class);
+            InputStream fileStream = context.getResource(descriptionFile).getInputStream();
+            return (CloudProvider) jAXBContext.createUnmarshaller().unmarshal(fileStream);
+        } catch (Exception ex) {
+            log.error("Cannot unmarshall : {}", ex.getMessage());
+            ex.printStackTrace();
+            return new CloudProvider("empty");
         }
     }
 }
