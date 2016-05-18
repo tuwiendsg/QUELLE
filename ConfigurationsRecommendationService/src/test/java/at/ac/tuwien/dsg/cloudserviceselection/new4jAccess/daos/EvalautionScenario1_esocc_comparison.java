@@ -582,7 +582,6 @@ public class EvalautionScenario1_esocc_comparison extends TestCase {
 
                 {
                     Requirements requirements = new Requirements();
-                    // construct requirements
                     requirements.setName("Monitoring");
                     {
                         Requirement requirement = new Requirement();
@@ -594,7 +593,6 @@ public class EvalautionScenario1_esocc_comparison extends TestCase {
                             Condition condition = new Condition(Condition.Type.GREATER_EQUAL, archMetric, new MetricValue(5));
                             requirement.addCondition(condition);
                         }
-                        //
                         requirements.addRequirement(requirement);
 
                     }
@@ -650,13 +648,6 @@ public class EvalautionScenario1_esocc_comparison extends TestCase {
                                 Condition condition = new Condition(Condition.Type.EQUAL, archMetric, new MetricValue("64"));
                                 requirement.addCondition(condition);
                             }
-                            // {
-                            // Condition condition = new
-                            // Condition(Condition.Type.GREATER_EQUAL, coresMetric,
-                            // new MetricValue(4));
-                            // requirement.addCondition(condition);
-                            // }
-                            requirements.addRequirement(requirement);
 
                         }
 

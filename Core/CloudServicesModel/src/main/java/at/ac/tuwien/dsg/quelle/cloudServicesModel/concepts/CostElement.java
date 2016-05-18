@@ -134,6 +134,9 @@ public class CostElement extends Unit implements Comparable<CostElement> {
         return costIntervalFunction;
     }
 
+    //todo: needs to be updated as currently, can't express 
+    // metric is #/time, but cost interval is over #. currently cost interval is only over time for periodic
+    // cost, and ofer # for cost per usage.
     public Double getCostForCostMetricValue(MetricValue value) {
         for (Entry<MetricValue, Double> entry : costIntervalFunction.entrySet()) {
             if (entry.getKey().compareTo(value) >= 0) {

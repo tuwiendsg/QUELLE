@@ -51,7 +51,7 @@
             <version>${slf4j.version}</version>
         </dependency>
         
-         <dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
@@ -60,31 +60,7 @@
 
     </dependencies>
  
-
-    <!--repository containing at.ac.tuwien.mela-->
-    <repositories>
-        <repository>
-            <id>infosys-repo</id>
-            <url>http://www.infosys.tuwien.ac.at/mvn</url>
-        </repository>
-    </repositories>
-
-
-  <!-- For deploying to TUW maven repository -->
-    <distributionManagement>
-        <repository>
-            <id>infosys-repo</id>
-            <name>infosys-repo</name>
-            <uniqueVersion>true</uniqueVersion>
-            <url>scp://www.infosys.tuwien.ac.at/web/website/mvn</url>
-        </repository>
-        <snapshotRepository>
-            <id>infosys-repo</id>
-            <name>infosys-repo</name>
-            <url>scp://www.infosys.tuwien.ac.at/web/website/mvn</url>
-            <uniqueVersion>true</uniqueVersion>
-        </snapshotRepository>
-    </distributionManagement>
+ 
 
     <build>
         <extensions>
@@ -96,6 +72,24 @@
         </extensions>
   
     </build>
+    
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>http://repo.infosys.tuwien.ac.at/artifactory/comot</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <url>http://repo.infosys.tuwien.ac.at/artifactory/comot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+    
 
 
 </project>

@@ -56,6 +56,16 @@ public class ServiceUnitComparators {
     @Autowired
     private CloudServiceElasticityAnalysisEngine cloudServiceElasticityAnalysisEngine;
 
+    public CloudServiceElasticityAnalysisEngine getCloudServiceElasticityAnalysisEngine() {
+        return cloudServiceElasticityAnalysisEngine;
+    }
+
+    public void setCloudServiceElasticityAnalysisEngine(CloudServiceElasticityAnalysisEngine cloudServiceElasticityAnalysisEngine) {
+        this.cloudServiceElasticityAnalysisEngine = cloudServiceElasticityAnalysisEngine;
+    }
+    
+    
+
     //hold comparator instances to be reused
     private final Map<StrategyCategory, Comparator> comparators = new EnumMap<StrategyCategory, Comparator>(StrategyCategory.class);
 
